@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#101528" />
+  <title>HAGIT 60 — America Coast to Coast</title>
+  <link rel="preconnect" href="https://unpkg.com" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root{
+      --bg:#0c1020; --bg2:#10182f; --card:rgba(23,31,59,.82); --card2:rgba(34,43,76,.72);
+      --ink:#fff9f2; --muted:#cbd2e6; --gold:#ffd36b; --peach:#ff8a78; --pink:#ff62a9;
+      --mint:#64e6c3; --blue:#79a8ff; --danger:#ff6b79; --line:rgba(255,255,255,.12);
+      --shadow:0 28px 80px rgba(0,0,0,.34); --radius:24px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;background:var(--bg)}
+    body{margin:0;color:var(--ink);font-family:Arial,"Noto Sans Hebrew",system-ui,sans-serif;line-height:1.5;overflow-x:hidden;
+      background:
+        radial-gradient(circle at 15% -10%,rgba(255,98,169,.26),transparent 30%),
+        radial-gradient(circle at 95% 5%,rgba(121,168,255,.24),transparent 30%),
+        radial-gradient(circle at 50% 80%,rgba(100,230,195,.11),transparent 36%),
+        linear-gradient(180deg,#0a0e1b 0%,#10162a 48%,#0b1020 100%);
+    }
+    button,input{font:inherit} button{cursor:pointer} a{color:inherit}
+    .wrap{width:min(1200px,calc(100% - 28px));margin:auto}
+    .glass{background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+    .eyebrow{font-size:12px;font-weight:900;letter-spacing:.17em;text-transform:uppercase;color:var(--gold)}
+    .muted{color:var(--muted)}
+    .section{padding:68px 0}
+    .section-title{font-size:clamp(30px,5vw,52px);line-height:1.05;margin:8px 0 12px;font-weight:950;letter-spacing:-.03em}
+    .section-copy{max-width:760px;color:var(--muted);font-size:17px;margin:0 0 28px}
+    .pill{display:inline-flex;gap:8px;align-items:center;padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.06);font-size:13px;font-weight:800}
+
+    .hero{min-height:92vh;display:grid;place-items:center;position:relative;padding:50px 0 38px;overflow:hidden}
+    .hero:before,.hero:after{content:"";position:absolute;border-radius:50%;filter:blur(4px);opacity:.65;pointer-events:none}
+    .hero:before{width:420px;height:420px;background:radial-gradient(circle,var(--pink),transparent 70%);left:-220px;top:5%}
+    .hero:after{width:520px;height:520px;background:radial-gradient(circle,var(--blue),transparent 70%);right:-280px;bottom:-100px}
+    .stars{position:absolute;inset:0;opacity:.35;background-image:radial-gradient(#fff 1px,transparent 1px);background-size:44px 44px;mask-image:linear-gradient(to bottom,#000,transparent 85%)}
+    .hero-card{position:relative;z-index:2;text-align:center;padding:48px 32px 34px;border-radius:34px;max-width:980px;margin:auto}
+    .hero-badge{display:inline-flex;align-items:center;gap:9px;background:linear-gradient(90deg,rgba(255,211,107,.16),rgba(255,98,169,.13));border:1px solid rgba(255,211,107,.35);padding:9px 15px;border-radius:999px;font-weight:900}
+    h1{font-size:clamp(50px,10vw,106px);line-height:.88;margin:24px 0 14px;letter-spacing:-.055em;font-weight:1000}
+    h1 .sixty{background:linear-gradient(100deg,var(--gold),#fff0a4,var(--peach),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+    .hero-sub{font-size:clamp(18px,3vw,27px);font-weight:800;color:#f7efff;margin:0 auto 22px;max-width:780px}
+    .hero-meta{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:22px 0}
+    .hero-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:26px}
+    .btn{border:0;border-radius:16px;padding:13px 18px;font-weight:900;transition:.2s transform,.2s opacity;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
+    .btn:hover{transform:translateY(-2px)}
+    .btn-primary{background:linear-gradient(135deg,var(--gold),#ff9b69);color:#1b1321}
+    .btn-secondary{background:rgba(255,255,255,.08);color:var(--ink);border:1px solid var(--line)}
+    .countdown{display:grid;grid-template-columns:repeat(4,minmax(80px,1fr));gap:10px;max-width:650px;margin:26px auto 0}
+    .count-box{padding:14px 8px;border-radius:18px;background:rgba(255,255,255,.055);border:1px solid var(--line)}
+    .count-num{display:block;font-size:30px;font-weight:1000;color:var(--gold);line-height:1}.count-label{font-size:12px;color:var(--muted);font-weight:800;margin-top:5px}
+
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:-22px;position:relative;z-index:4}
+    .stat{padding:22px;border-radius:22px;text-align:center}.stat strong{font-size:31px;display:block;color:var(--gold)}.stat span{color:var(--muted);font-size:13px;font-weight:800}
+
+    .alert-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:16px}
+    .temp-swing{border-radius:28px;padding:28px;background:linear-gradient(135deg,rgba(121,168,255,.13),rgba(255,98,169,.12));border:1px solid var(--line)}
+    .temp-scale{display:flex;align-items:center;gap:12px;margin:22px 0 8px}.temp-end{min-width:86px;text-align:center}.temp-end b{font-size:28px;display:block}.temp-end small{color:var(--muted)}
+    .scale{height:14px;border-radius:999px;flex:1;background:linear-gradient(90deg,#7fd4ff,#80f0c6,#ffe27a,#ff8d63,#ff5c72);box-shadow:0 0 30px rgba(255,141,99,.2)}
+    .warning{border-radius:28px;padding:28px}.warning h3{margin:0 0 8px;font-size:24px}.warning ul{margin:12px 0 0;padding-right:20px}.warning li{margin:8px 0;color:var(--muted)}
+
+    .map-shell{border-radius:30px;padding:12px;overflow:hidden}.map-top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 10px 16px;flex-wrap:wrap}
+    #map{height:540px;border-radius:22px;background:#17213a;z-index:1}.map-fallback{display:none;height:540px;border-radius:22px;align-items:center;justify-content:center;text-align:center;padding:30px;background:linear-gradient(135deg,#17213a,#221d3e)}
+    .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#11172b;color:white}.leaflet-popup-content{font-family:Arial,"Noto Sans Hebrew",sans-serif;direction:rtl;min-width:180px}
+    .marker-number{background:linear-gradient(135deg,var(--gold),var(--peach));width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:#211426;font-weight:1000;border:3px solid white;box-shadow:0 7px 18px rgba(0,0,0,.35)}
+
+    .timeline{display:grid;gap:12px}.day{display:grid;grid-template-columns:82px 1fr;gap:15px;padding:18px;border-radius:22px;border:1px solid var(--line);background:rgba(255,255,255,.045);transition:.2s}
+    .day:hover{background:rgba(255,255,255,.07);transform:translateY(-1px)}
+    .day-no{text-align:center;border-left:1px solid var(--line);padding-left:12px}.day-no strong{display:block;font-size:27px;color:var(--gold)}.day-no span{font-size:12px;color:var(--muted);font-weight:800}
+    .day h3{margin:0 0 4px;font-size:20px}.day p{margin:0;color:var(--muted)}.day-tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.mini-tag{font-size:11px;font-weight:900;padding:5px 8px;border-radius:999px;background:rgba(121,168,255,.1);border:1px solid rgba(121,168,255,.2);color:#d9e4ff}
+
+    .weather-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .weather-card{padding:20px;border-radius:24px;position:relative;overflow:hidden;min-height:220px}.weather-card:before{content:"";position:absolute;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(255,211,107,.2),transparent 70%);left:-50px;top:-50px}
+    .weather-title{display:flex;align-items:center;justify-content:space-between;gap:8px}.weather-title h3{font-size:20px;margin:0}.weather-date{font-size:11px;color:var(--muted);font-weight:800}
+    .weather-now{font-size:42px;font-weight:1000;margin:12px 0 2px}.weather-desc{color:var(--muted);font-size:14px}.forecast-line{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px}.forecast-line b{display:block;font-size:18px;color:var(--gold)}
+    .weather-state{font-size:12px;color:var(--muted);margin-top:10px}.weather-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--mint);margin-left:5px}
+    .climate{margin-top:10px;border-radius:14px;padding:9px 11px;background:rgba(255,255,255,.05);font-size:12px;color:#e7eaf5}.climate b{color:var(--gold)}
+
+    .packing-layout{display:grid;grid-template-columns:.85fr 1.15fr;gap:18px;align-items:start}
+    .packing-guide{border-radius:28px;padding:24px;position:sticky;top:12px}.packing-guide h3{font-size:25px;margin:0 0 4px}.packing-guide .big-number{font-size:54px;font-weight:1000;color:var(--gold);line-height:1;margin:18px 0 8px}.packing-guide ul{padding-right:20px;margin:14px 0}.packing-guide li{margin:7px 0;color:var(--muted)}
+    .check-shell{border-radius:28px;padding:22px}.progress-row{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:16px}.progress-wrap{flex:1;height:11px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}.progress-bar{height:100%;width:0;background:linear-gradient(90deg,var(--mint),var(--gold),var(--pink));transition:.25s}
+    .category{margin:18px 0}.category h4{font-size:17px;margin:0 0 10px;color:#fff0c7}.check-item{display:flex;align-items:center;gap:10px;padding:10px 11px;border-radius:13px;margin:6px 0;background:rgba(255,255,255,.04);border:1px solid transparent}.check-item:hover{border-color:var(--line)}
+    .check-item input{width:19px;height:19px;accent-color:#64e6c3}.check-item.done .item-text{text-decoration:line-through;color:#8490aa}.item-text{flex:1}.delete-item{border:0;background:transparent;color:#9aa5bd;font-size:18px;padding:2px 6px}.delete-item:hover{color:var(--danger)}
+    .add-row{display:flex;gap:8px;margin-top:15px}.add-row input{min-width:0;flex:1;padding:12px 13px;border-radius:13px;border:1px solid var(--line);background:rgba(0,0,0,.16);color:white;outline:none}.add-row input:focus{border-color:rgba(255,211,107,.55)}
+
+    .tips-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.tip{padding:20px;border-radius:22px}.tip .icon{font-size:28px}.tip h3{font-size:18px;margin:7px 0}.tip p{color:var(--muted);margin:0;font-size:14px}
+    .flight-card{display:grid;grid-template-columns:1fr 1fr;gap:16px}.flight-panel{padding:24px;border-radius:26px}.flight-panel h3{margin:0 0 10px;font-size:23px}.flight-panel ul{padding-right:20px;margin:0}.flight-panel li{margin:8px 0;color:var(--muted)}
+
+    .hotel-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.hotel{padding:15px;border-radius:18px;background:rgba(255,255,255,.045);border:1px solid var(--line)}.hotel b{display:block;color:#fff4d0}.hotel span{font-size:13px;color:var(--muted)}
+    .privacy{border-radius:24px;padding:20px;border:1px solid rgba(255,211,107,.22);background:rgba(255,211,107,.07);margin-top:22px}
+
+    footer{padding:42px 0 60px;color:#95a0b8;text-align:center;font-size:13px}.footer-links{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:10px}.footer-links a{color:#d8def0}
+    #confetti{position:fixed;inset:0;pointer-events:none;z-index:9999}
+    .toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,20px);padding:12px 16px;border-radius:14px;background:#fff;color:#111;font-weight:900;opacity:0;transition:.25s;z-index:10000;box-shadow:0 18px 50px rgba(0,0,0,.3)}.toast.show{opacity:1;transform:translate(-50%,0)}
+    .nav{position:sticky;top:0;z-index:20;background:rgba(8,12,24,.76);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}.nav-in{display:flex;justify-content:space-between;align-items:center;gap:15px;height:58px}.brand{font-weight:1000;letter-spacing:-.02em}.nav-links{display:flex;gap:14px;font-size:13px;font-weight:800}.nav-links a{text-decoration:none;color:#cbd2e6}.nav-links a:hover{color:white}
+
+    @media (max-width:900px){
+      .stats{grid-template-columns:repeat(2,1fr)}.alert-grid,.packing-layout,.flight-card{grid-template-columns:1fr}.packing-guide{position:static}.weather-grid,.tips-grid{grid-template-columns:repeat(2,1fr)}#map,.map-fallback{height:440px}.nav-links{display:none}
+    }
+    @media (max-width:620px){
+      .hero{min-height:auto;padding-top:34px}.hero-card{padding:36px 18px 26px;border-radius:28px}.countdown{grid-template-columns:repeat(2,1fr)}.weather-grid,.tips-grid,.hotel-grid{grid-template-columns:1fr}.day{grid-template-columns:62px 1fr}.day-no strong{font-size:23px}.stats{gap:8px}.stat{padding:15px 8px}.stat strong{font-size:25px}.section{padding:50px 0}#map,.map-fallback{height:390px}.temp-end{min-width:64px}.temp-end b{font-size:22px}
+    }
+    @media print{.nav,.hero-actions,#confetti,.btn,.add-row,.delete-item{display:none!important}body{background:white;color:#111}.glass,.day,.tip,.hotel,.weather-card{box-shadow:none;background:white;color:#111;border:1px solid #ddd}.muted,.day p,.tip p,.hotel span{color:#555}.section{padding:18px 0}.hero{min-height:0}.hero-card{border:0}.packing-layout{grid-template-columns:1fr}.packing-guide{position:static}}
+  </style>
+</head>
+<body>
+  <canvas id="confetti"></canvas>
+  <div class="toast" id="toast">נשמר ✨</div>
+
+  <nav class="nav">
+    <div class="wrap nav-in">
+      <div class="brand">HAGIT 60 🇺🇸</div>
+      <div class="nav-links">
+        <a href="#route">המסלול</a><a href="#weather">מזג אוויר</a><a href="#packing">מזוודה</a><a href="#flight">טיסה</a>
+      </div>
+      <button class="btn btn-secondary" style="padding:8px 11px" onclick="party()">🎉 PARTY</button>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="stars"></div>
+    <div class="wrap">
+      <div class="hero-card glass">
+        <div class="hero-badge">🎂 60 & UNSTOPPABLE · COAST TO COAST</div>
+        <h1>HAGIT <span class="sixty">60</span></h1>
+        <p class="hero-sub">אמריקה הקסומה — מסע יום הולדת מחוף לחוף, מלוס אנג׳לס ועד ניו יורק</p>
+        <div class="hero-meta">
+          <span class="pill">✈️ 17.08.2026 → 05.09.2026</span>
+          <span class="pill">🧭 UST · 20 ימים</span>
+          <span class="pill">👑 חגית שטרית</span>
+          <span class="pill">🎤 מדריך: מאיר אמר</span>
+        </div>
+        <div class="countdown" id="countdown"></div>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#packing">🧳 לפתוח צ׳ק־ליסט</a>
+          <a class="btn btn-secondary" href="#route">🗺️ לראות את כל המסלול</a>
+          <button class="btn btn-secondary" onclick="party()">🥂 חגית, תעשי בלגן</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="wrap">
+      <div class="stats">
+        <div class="stat glass"><strong>20</strong><span>ימי אמריקה</span></div>
+        <div class="stat glass"><strong>16+</strong><span>יעדים ואתרי טבע</span></div>
+        <div class="stat glass"><strong>8°–42°</strong><span>טווח שכדאי להתכונן אליו</span></div>
+        <div class="stat glass"><strong>2</strong><span>חופים של ארה״ב</span></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <div class="eyebrow">THE ONE THING TO KNOW</div>
+        <h2 class="section-title">המזוודה צריכה להתמודד עם כמעט ארבע עונות</h2>
+        <p class="section-copy">במערב כבר יש תחזית ממשית: קריר בסן פרנסיסקו ובברייס, חם מאוד בלאס וגאס, ולילות קרירים בגרנד קניון. הפתרון הוא לא מזוודה ענקית — אלא שכבות חכמות.</p>
+        <div class="alert-grid">
+          <div class="temp-swing glass">
+            <div class="eyebrow">TEMPERATURE WHIPLASH</div>
+            <div class="temp-scale">
+              <div class="temp-end"><b>8°C</b><small>ברייס בלילה</small></div>
+              <div class="scale"></div>
+              <div class="temp-end"><b>42°C</b><small>לאס וגאס ביום</small></div>
+            </div>
+            <p class="muted" style="margin:14px 0 0">המסקנה: חולצות קיץ + עליונית/פליז קל + מעיל גשם דק + נעלי הליכה טובות. לא צריך מעיל חורף כבד.</p>
+          </div>
+          <div class="warning glass">
+            <h3>🧥 איפה באמת עלול להיות קר?</h3>
+            <ul>
+              <li><b>סן פרנסיסקו:</b> רוח, ערפל ו־14–19°C.</li>
+              <li><b>ברייס קניון:</b> גבוה בהרים; סביב 8°C בלילה.</li>
+              <li><b>גרנד קניון:</b> בוקר/ערב יכולים להיות סביב 9°C.</li>
+              <li><b>ניאגרה / ניו יורק:</b> לקראת ספטמבר ייתכנו ערבים קרירים וגשם.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="route">
+      <div class="wrap">
+        <div class="eyebrow">COAST TO COAST</div>
+        <h2 class="section-title">המפה של חגית</h2>
+        <p class="section-copy">הקו עוקב אחרי המסלול הרשמי: דרום קליפורניה → החוף הפסיפי → יוסמיטי → נבאדה ויוטה → גרנד קניון → טיסה פנימית לפניקס–וושינגטון → פנסילבניה → ניאגרה → ניו יורק.</p>
+        <div class="map-shell glass">
+          <div class="map-top"><span class="pill">📍 לחצי על כל מספר לפרטים</span><span class="muted" style="font-size:13px">מפה: OpenStreetMap · מסלול סכמטי</span></div>
+          <div id="map"></div>
+          <div class="map-fallback" id="mapFallback"><div><div style="font-size:42px">🗺️</div><b>המפה צריכה חיבור לאינטרנט</b><p class="muted">המסלול המלא עדיין מופיע ממש מתחת.</p></div></div>
+        </div>
+
+        <div style="height:26px"></div>
+        <div class="timeline" id="timeline"></div>
+      </div>
+    </section>
+
+    <section class="section" id="weather">
+      <div class="wrap">
+        <div class="eyebrow">LIVE WEATHER BOARD</div>
+        <h2 class="section-title">מזג האוויר במסלול — חי</h2>
+        <p class="section-copy">כל כרטיס מושך טמפרטורה עדכנית מהאינטרנט. אם תאריך הביקור כבר נמצא בטווח התחזית, יוצגו גם המקסימום והמינימום הצפויים לאותו יום; אחרת מופיע טווח עונתי שימושי והתחזית תתעדכן אוטומטית כשהתאריך יתקרב.</p>
+        <div class="weather-grid" id="weatherGrid"></div>
+      </div>
+    </section>
+
+    <section class="section" id="packing">
+      <div class="wrap">
+        <div class="eyebrow">THE SUITCASE</div>
+        <h2 class="section-title">מה באמת לקחת ל־20 יום?</h2>
+        <p class="section-copy">המסלול מחליף מלון כמעט כל לילה, אז עדיף לא לבנות על כביסה כל יומיים. ההמלצה: לארוז בערך ל־10–12 ימים ולעשות כביסה אחת במהלך שלושת הלילות בלאס וגאס או בהמשך כשנוח.</p>
+        <div class="packing-layout">
+          <aside class="packing-guide glass">
+            <h3>🧳 נוסחת חגית</h3>
+            <div class="big-number">10–12</div>
+            <div class="muted">ימים של בגדים, לא 20.</div>
+            <ul>
+              <li><b>8–10</b> חולצות קצרות / קלילות</li>
+              <li><b>4–5</b> מכנסיים / חצאיות נוחים</li>
+              <li><b>10–12</b> פריטי הלבשה תחתונה</li>
+              <li><b>8–10</b> זוגות גרביים</li>
+              <li><b>1</b> פליז/סווטשירט קל וטוב</li>
+              <li><b>1</b> קרדיגן/עליונית דקה</li>
+              <li><b>1</b> מעיל גשם מתקפל</li>
+              <li><b>1</b> סט יפה ליום הולדת / ערב</li>
+              <li><b>2</b> זוגות נעליים מקסימום — אחד מהם נעלי הליכה רציניות</li>
+            </ul>
+            <div class="climate"><b>טיפ:</b> תשאירו 20–25% מהמזוודה ריק. אמריקה + אאוטלטים + ג׳רזי גארדן = המזוודה חוזרת עם חיים חדשים.</div>
+            <button class="btn btn-secondary" style="width:100%;margin-top:14px" onclick="window.print()">🖨️ להדפיס / לשמור PDF</button>
+          </aside>
+
+          <div class="check-shell glass">
+            <div class="progress-row"><b id="progressText">0% ארוז</b><div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div></div>
+            <div id="checklist"></div>
+            <div class="add-row"><input id="newItem" placeholder="להוסיף משהו משלכם…" /><button class="btn btn-primary" onclick="addCustomItem()">＋ הוספה</button></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn btn-secondary" onclick="copyChecklist()">📋 העתק רשימה</button><button class="btn btn-secondary" onclick="resetChecklist()">↺ איפוס סימונים</button></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="flight">
+      <div class="wrap">
+        <div class="eyebrow">LONG-HAUL SURVIVAL</div>
+        <h2 class="section-title">תיק היד לטיסה ללוס אנג׳לס</h2>
+        <div class="flight-card">
+          <div class="flight-panel glass">
+            <h3>✈️ מה שיהיה איתה במושב</h3>
+            <ul>
+              <li>דרכון + אישור ESTA + ביטוח נסיעות + מסמכי הטיול</li>
+              <li>טלפון, כבל טעינה ואוזניות</li>
+              <li>תרופות קבועות וכל תרופה חשובה — לא במזוודה שנשלחת</li>
+              <li>חולצה ותחתונים להחלפה, מברשת שיניים קטנה</li>
+              <li>עליונית דקה — במטוס יכול להיות קר</li>
+              <li>בקבוק מים ריק למילוי אחרי הבידוק + חטיף</li>
+              <li>עט קטן — תמיד איכשהו צריך עט דווקא כשאין</li>
+            </ul>
+          </div>
+          <div class="flight-panel glass">
+            <h3>🔋 Power Bank 5,000mAh</h3>
+            <ul>
+              <li><b>כן, מותר להעלות.</b> באל־על מותר Power Bank אחד עד 100Wh.</li>
+              <li>חייב להיות <b>בתיק היד</b>, לא במזוודה שנשלחת.</li>
+              <li>סימון ה־Wh צריך להיות ברור על המכשיר.</li>
+              <li>לפי כללי אל־על המעודכנים, <b>אסור להשתמש בו או לטעון אותו במהלך הטיסה</b>.</li>
+              <li>עדיף להטעין את הטלפון משקע/USB במטוס ולשמור את הסוללה לשדה ולנחיתה.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <div class="eyebrow">HOTELS & LOGISTICS</div>
+        <h2 class="section-title">איפה ישנים בדרך</h2>
+        <p class="section-copy">זו רשימת האזורים והלילות שמפרסמת רימון למסלול UST. שמות המלונות עצמם מוגדרים על־ידם כ״מלון זה או דומה לו״ ולכן כדאי להסתמך על מסמכי הקבוצה הסופיים.</p>
+        <div class="hotel-grid">
+          <div class="hotel"><b>לוס אנג׳לס / אנהיים</b><span>3 לילות · Lulu / JW Marriott Anaheim או דומה</span></div>
+          <div class="hotel"><b>סנטה מריה</b><span>לילה 1 · Hampton Inn או דומה</span></div>
+          <div class="hotel"><b>אזור סן פרנסיסקו</b><span>2 לילות · Hilton Garden Inn Emeryville או דומה</span></div>
+          <div class="hotel"><b>טולרה / אזור יוסמיטי</b><span>לילה 1 · Sonesta Suites או דומה</span></div>
+          <div class="hotel"><b>לאס וגאס</b><span>3 לילות · Luxor / Excalibur או דומה</span></div>
+          <div class="hotel"><b>קנאב</b><span>לילה 1 · La Quinta או דומה</span></div>
+          <div class="hotel"><b>וויליאמס / פלגסטף</b><span>לילה 1 · Fairfield Inn / Days Hotel או דומה</span></div>
+          <div class="hotel"><b>וושינגטון</b><span>2 לילות · Home2 Suites Falls Church או דומה</span></div>
+          <div class="hotel"><b>פנסילבניה</b><span>לילה 1 · Holiday Inn & Suites או דומה</span></div>
+          <div class="hotel"><b>מפלי הניאגרה</b><span>לילה 1 · Courtyard / Fairfield Inn או דומה</span></div>
+          <div class="hotel"><b>אזור סקרנטון</b><span>לילה 1 · Fairfield Inn או דומה</span></div>
+          <div class="hotel"><b>ניו יורק</b><span>2 לילות · Hyatt Grand Central / Millennium Broadway או דומה</span></div>
+        </div>
+        <div class="privacy"><b>🔐 הערת פרטיות קטנה:</b> הקישור האישי של רימון מכיל פרטי הזמנה ומזהה נוסע. עדיף לא לפרסם אותו בקבוצה פתוחה או ברשתות חברתיות.</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <div class="eyebrow">HAGIT'S RULES OF AMERICA</div>
+        <h2 class="section-title">10 טיפים שיחסכו עצבים</h2>
+        <div class="tips-grid">
+          <div class="tip glass"><div class="icon">👟</div><h3>נעליים לפני סטייל</h3><p>יוניברסל, סן פרנסיסקו, יוסמיטי, פארקים וניו יורק = המון צעדים. זוג שכבר ננעל ונוח, לא זוג חדש מהקופסה.</p></div>
+          <div class="tip glass"><div class="icon">🧅</div><h3>שיטת הבצל</h3><p>טי־שירט + עליונית + שכבה חמה מתקפלת. ככה עוברים מ־42° בוגאס ל־8° בברייס בלי לסחוב ארון.</p></div>
+          <div class="tip glass"><div class="icon">☀️</div><h3>שמש אמריקאית</h3><p>כובע, משקפי שמש, קרם הגנה ובקבוק מים — במיוחד בלאס וגאס, ציון והגרנד קניון.</p></div>
+          <div class="tip glass"><div class="icon">💳</div><h3>שני אמצעי תשלום</h3><p>כרטיס עיקרי + כרטיס גיבוי במקום נפרד. מעט מזומן קטן לטיפים/דברים קטנים, לא ארנק מפוצץ.</p></div>
+          <div class="tip glass"><div class="icon">📱</div><h3>צילום מסמכים</h3><p>לשמור בנייד ובענן צילום של דרכון, ביטוח, ESTA וכרטיסי טיסה. לא במקום המקור — כגיבוי.</p></div>
+          <div class="tip glass"><div class="icon">🧳</div><h3>AirTag / תג מזוודה</h3><p>אם יש — זה טיול קלאסי לתג איתור: טיסה ארוכה + טיסת פנים + הרבה מעברי מלון.</p></div>
+          <div class="tip glass"><div class="icon">🛍️</div><h3>לא למלא את המזוודה</h3><p>יש קניות בלאס וגאס ובסוף ג׳רזי גארדן. תשאירי נפח ומשקל מראש.</p></div>
+          <div class="tip glass"><div class="icon">🌧️</div><h3>מעיל גשם דק</h3><p>שימושי במיוחד בסן פרנסיסקו, ניאגרה וגם אם נופל גשם קצר במזרח. מתקפל לכמעט כלום.</p></div>
+          <div class="tip glass"><div class="icon">🚌</div><h3>תיק יום קטן</h3><p>מים, שכבה חמה, מטען, מסמכים, תרופות וכובע. המזוודה הגדולה נשארת בבטן האוטובוס/מלון.</p></div>
+          <div class="tip glass"><div class="icon">🥂</div><h3>והכי חשוב</h3><p>לא לרדוף אחרי כל וי ברשימה. זו חגיגת 60 באמריקה — לפעמים הקפה מול הנוף הוא האירוע.</p></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <div><b>HAGIT 60 — THE AMERICAN BIRTHDAY TOUR</b></div>
+      <div style="margin-top:5px">נבנה במיוחד לחגית שטרית · אוגוסט–ספטמבר 2026 🇺🇸✨</div>
+      <div class="footer-links">
+        <a href="https://esta.cbp.dhs.gov/" target="_blank" rel="noopener">ESTA הרשמי</a>
+        <a href="https://rimon-tours.co.il/" target="_blank" rel="noopener">רימון טיולים</a>
+        <a href="https://www.elal.com/eng/baggage/dangerous-material" target="_blank" rel="noopener">כללי סוללות אל־על</a>
+      </div>
+      <div style="margin-top:12px">מזג האוויר החי באתר מבוסס Open‑Meteo. תחזיות משתנות — לבדוק שוב 24–48 שעות לפני כל יעד.</div>
+    </div>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const tripStart = new Date('2026-08-17T00:00:00-07:00');
+
+    const days = [
+      {d:1,date:'17.08',title:'תל אביב → לוס אנג׳לס',desc:'טיסה ישירה, הוליווד, תיאטרון דולבי, בוורלי הילס ושוק האיכרים.',tags:['אל־על','לוס אנג׳לס']},
+      {d:2,date:'18.08',title:'סאן דייגו',desc:'לה הויה, המרינה, פסל הנשיקה, האי קורונאדו והעיר העתיקה.',tags:['חוף','הליכה']},
+      {d:3,date:'19.08',title:'יוניברסל סטודיוז + סנטה מוניקה',desc:'יום פארק ואולפנים, אחריו טיילת ומזח סנטה מוניקה.',tags:['פארק','שמש']},
+      {d:4,date:'20.08',title:'סנטה ברברה + סולוונג',desc:'צפון קליפורניה, אדריכלות ספרדית ועיירה דנית ציורית.',tags:['נסיעה','קליפורניה']},
+      {d:5,date:'21.08',title:'מונטריי + דרך 17 המייל + סן פרנסיסקו',desc:'חוף פסיפי, מצוקים, מונטריי והגעה לסן פרנסיסקו בערב.',tags:['רוח','עליונית']},
+      {d:6,date:'22.08',title:'סן פרנסיסקו + סוסליטו',desc:'גולדן גייט, פישרמנס וורף, אלקטרז מבחוץ, לומבארד, Twin Peaks וצ׳יינה טאון.',tags:['קריר','הרבה הליכה']},
+      {d:7,date:'23.08',title:'יוסמיטי פארק',desc:'אל קפיטן, מפלים, נופי סיירה נבדה ועצי סקוויה.',tags:['טבע','נעלי הליכה']},
+      {d:8,date:'24.08',title:'לאס וגאס',desc:'נסיעה דרך קליפורניה והגעה לעיר האורות. אפשרות לסיור לילה.',tags:['חם מאוד','ערב']},
+      {d:9,date:'25.08',title:'סכר הובר + לאס וגאס',desc:'תצפיות על סכר הובר ואגם מיד, חזרה לקניות וזמן בעיר.',tags:['42° אפשרי','קניות']},
+      {d:10,date:'26.08',title:'לאס וגאס — יום חופשי + מופע',desc:'יום עצמאי בין המלונות והקניות, בערב מופע בידור כלול.',tags:['יום חופשי','מופע']},
+      {d:11,date:'27.08',title:'ציון פארק + ברייס קניון',desc:'יום של טבע ביוטה: צוקים אדומים, צריחי סלע וגבהים שבהם הערב יכול להיות ממש קריר.',tags:['8° בלילה','שכבות']},
+      {d:12,date:'28.08',title:'סכר גלן + Horseshoe Bend + גרנד קניון',desc:'אגם פאואל, עיקול פרסת הסוס ותצפיות על הגרנד קניון.',tags:['בוקר קריר','שמש חזקה']},
+      {d:13,date:'29.08',title:'פניקס → וושינגטון',desc:'פרידה מהמערב וטיסת פנים מפניקס לוושינגטון. הגעה בשעות הערב.',tags:['טיסת פנים','מזוודה בתשלום']},
+      {d:14,date:'30.08',title:'וושינגטון די.סי.',desc:'הקפיטול, הבית הלבן, אנדרטאות וושינגטון, ג׳פרסון, וייטנאם, רוזוולט ומלחמת העולם השנייה.',tags:['הליכה','לחות']},
+      {d:15,date:'31.08',title:'חבל האמיש + הרשי',desc:'אורח החיים של האמיש ועולם השוקולד של הרשי. לינה בפנסילבניה.',tags:['פנסילבניה','שוקולד']},
+      {d:16,date:'01.09',title:'ווטקינס גלן + מפלי הניאגרה',desc:'מסלול טבע בין מפלים וקניון, מעבר לצד הקנדי של ניאגרה ומפלים מוארים בערב.',tags:['מים','מעיל גשם']},
+      {d:17,date:'02.09',title:'שייט בניאגרה + Niagara-on-the-Lake',desc:'שייט אל המפלים עם מעיל גשם, עיירת ניאגרה און דה לייק והמשך לכיוון סקרנטון.',tags:['נרטבים','קריר ליד מים']},
+      {d:18,date:'03.09',title:'ניו יורק — היכרות ראשונה',desc:'רוקפלר, השדרה החמישית, סנט פטריק, סנטרל פארק, לינקולן סנטר והיכרות ערב רגלית.',tags:['ניו יורק','הליכה']},
+      {d:19,date:'04.09',title:'ניו יורק — מנהטן',desc:'אמפייר סטייט, גריניץ׳ וילג׳, צ׳לסי מרקט, היי ליין, סוהו, צ׳יינה טאון, וול סטריט וגראונד זירו.',tags:['יום עמוס','נעליים!']},
+      {d:20,date:'05.09',title:'ג׳רזי גארדן → טיסה לישראל',desc:'קניות אחרונות בג׳רזי גארדן ובהתאם לשעת הטיסה — לשדה ולדרך הביתה.',tags:['אאוטלט','טיסה חזרה']}
+    ];
+
+    const routePoints = [
+      {n:1,name:'Los Angeles',lat:34.0522,lon:-118.2437,day:'17–19.08'},
+      {n:2,name:'San Diego',lat:32.7157,lon:-117.1611,day:'18.08'},
+      {n:3,name:'Santa Barbara / Solvang',lat:34.5958,lon:-120.1376,day:'20.08'},
+      {n:4,name:'Monterey',lat:36.6002,lon:-121.8947,day:'21.08'},
+      {n:5,name:'San Francisco',lat:37.7749,lon:-122.4194,day:'21–22.08'},
+      {n:6,name:'Yosemite Valley',lat:37.7456,lon:-119.5936,day:'23.08'},
+      {n:7,name:'Las Vegas',lat:36.1699,lon:-115.1398,day:'24–26.08'},
+      {n:8,name:'Zion / Bryce',lat:37.45,lon:-112.58,day:'27.08'},
+      {n:9,name:'Grand Canyon',lat:36.0544,lon:-112.1401,day:'28.08'},
+      {n:10,name:'Phoenix',lat:33.4484,lon:-112.0740,day:'29.08 · flight'},
+      {n:11,name:'Washington DC',lat:38.9072,lon:-77.0369,day:'29–30.08'},
+      {n:12,name:'Amish Country / Hershey',lat:40.0750,lon:-76.5000,day:'31.08'},
+      {n:13,name:'Watkins Glen',lat:42.3806,lon:-76.8733,day:'01.09'},
+      {n:14,name:'Niagara Falls',lat:43.0896,lon:-79.0849,day:'01–02.09'},
+      {n:15,name:'Scranton',lat:41.4089,lon:-75.6624,day:'02.09'},
+      {n:16,name:'New York City',lat:40.7128,lon:-74.0060,day:'03–05.09'}
+    ];
+
+    const weatherStops = [
+      {name:'לוס אנג׳לס',lat:34.0522,lon:-118.2437,date:'2026-08-17',climate:'לרוב חם ונעים · 20–31°C'},
+      {name:'סאן דייגו',lat:32.7157,lon:-117.1611,date:'2026-08-18',climate:'חוף נעים · 19–27°C'},
+      {name:'סנטה ברברה',lat:34.4208,lon:-119.6982,date:'2026-08-20',climate:'נעים ליד הים · 18–27°C'},
+      {name:'מונטריי',lat:36.6002,lon:-121.8947,date:'2026-08-21',climate:'קריר ורוחני · 13–21°C'},
+      {name:'סן פרנסיסקו',lat:37.7749,lon:-122.4194,date:'2026-08-22',climate:'קריר בקיץ · 14–20°C'},
+      {name:'יוסמיטי ואלי',lat:37.7456,lon:-119.5936,date:'2026-08-23',climate:'יום חם, בוקר קריר · 13–33°C'},
+      {name:'לאס וגאס',lat:36.1699,lon:-115.1398,date:'2026-08-25',climate:'חום מדברי קיצוני · 26–42°C'},
+      {name:'ברייס קניון',lat:37.6283,lon:-112.1677,date:'2026-08-27',climate:'גובה רב · 8–24°C'},
+      {name:'גרנד קניון',lat:36.0544,lon:-112.1401,date:'2026-08-28',climate:'בוקר/לילה קרירים · 9–28°C'},
+      {name:'וושינגטון DC',lat:38.9072,lon:-77.0369,date:'2026-08-30',climate:'חם ולח · בערך 21–31°C'},
+      {name:'חבל האמיש / לנקסטר',lat:40.0379,lon:-76.3055,date:'2026-08-31',climate:'סוף קיץ · בערך 18–29°C'},
+      {name:'ווטקינס גלן',lat:42.3806,lon:-76.8733,date:'2026-09-01',climate:'נעים עד קריר · בערך 14–25°C'},
+      {name:'מפלי הניאגרה',lat:43.0896,lon:-79.0849,date:'2026-09-01',climate:'קריר ליד המים · בערך 14–24°C'},
+      {name:'סקרנטון',lat:41.4089,lon:-75.6624,date:'2026-09-02',climate:'סוף קיץ · בערך 14–26°C'},
+      {name:'ניו יורק',lat:40.7128,lon:-74.0060,date:'2026-09-03',climate:'חם-נעים, ייתכן גשם · בערך 19–28°C'}
+    ];
+
+    const baseChecklist = [
+      {cat:'מסמכים וכסף',items:['דרכון בתוקף','אישור ESTA','ביטוח נסיעות','מסמכי רימון / פרטי הטיסות','כרטיס אשראי עיקרי','כרטיס אשראי גיבוי במקום נפרד','מעט דולרים במזומן','צילום מסמכים בנייד/ענן']},
+      {cat:'בגדים',items:['8–10 חולצות קצרות/קלילות','4–5 מכנסיים/חצאיות נוחים','10–12 פריטי הלבשה תחתונה','8–10 זוגות גרביים','2 פיג׳מות','קרדיגן / עליונית דקה','פליז / סווטשירט חם אחד','מעיל גשם קל ומתקפל','סט חגיגי אחד לערב/יום הולדת','בגד ים']},
+      {cat:'נעליים ואביזרים',items:['נעלי הליכה נוחות שכבר ננעלו','זוג נעליים נוסף קל','כובע שמש','משקפי שמש','צעיף דק / שאל לערבים קרירים','תיק יום קטן ונוח']},
+      {cat:'טיסה וטכנולוגיה',items:['טלפון','מטען לטלפון','מתאם תקע לארה״ב Type A/B','אוזניות','Power Bank אחד עם סימון Wh ברור','כבל טעינה נוסף','AirTag / תג איתור למזוודה אם יש','בקבוק מים ריק למילוי אחרי הבידוק']},
+      {cat:'רחצה ובריאות',items:['תרופות קבועות בתיק היד','קרם הגנה','כלי רחצה בגודל מתאים','מברשת ומשחת שיניים','דאודורנט','שפתון לחות','פלסטרים / ערכה קטנה לשפשופים','טישו / מגבונים']},
+      {cat:'בונוס חגית',items:['להשאיר 20–25% מקום פנוי במזוודה','לשים סט החלפה אחד בתיק היד','להוריד מוזיקה/סדרה לטלפון לפני הטיסה','לצלם תמונה מטורפת בכל מדינה','לחגוג 60 כאילו אמריקה נבנתה בשבילך']}
+    ];
+
+    function renderTimeline(){
+      const el=document.getElementById('timeline');
+      el.innerHTML=days.map(x=>`<article class="day"><div class="day-no"><strong>${x.d}</strong><span>${x.date}</span></div><div><h3>${x.title}</h3><p>${x.desc}</p><div class="day-tags">${x.tags.map(t=>`<span class="mini-tag">${t}</span>`).join('')}</div></div></article>`).join('');
+    }
+
+    function renderCountdown(){
+      const el=document.getElementById('countdown');
+      const now=new Date();
+      let diff=tripStart-now;
+      if(diff<=0){ el.innerHTML='<div class="count-box" style="grid-column:1/-1"><span class="count-num">🇺🇸</span><div class="count-label">המסע התחיל — חגית באמריקה!</div></div>'; return; }
+      const daysLeft=Math.floor(diff/86400000); diff%=86400000;
+      const h=Math.floor(diff/3600000); diff%=3600000;
+      const m=Math.floor(diff/60000); const s=Math.floor((diff%60000)/1000);
+      el.innerHTML=[[daysLeft,'ימים'],[h,'שעות'],[m,'דקות'],[s,'שניות']].map(([n,l])=>`<div class="count-box"><span class="count-num">${String(n).padStart(2,'0')}</span><div class="count-label">${l}</div></div>`).join('');
+    }
+    renderCountdown(); setInterval(renderCountdown,1000);
+
+    function initMap(){
+      if(typeof L==='undefined'){document.getElementById('map').style.display='none';document.getElementById('mapFallback').style.display='flex';return}
+      const map=L.map('map',{scrollWheelZoom:false,zoomControl:true}).setView([38,-108],4);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
+      const west=routePoints.slice(0,10).map(p=>[p.lat,p.lon]);
+      const east=routePoints.slice(10).map(p=>[p.lat,p.lon]);
+      L.polyline(west,{color:'#ff8a78',weight:4,opacity:.85}).addTo(map);
+      L.polyline([[routePoints[9].lat,routePoints[9].lon],[routePoints[10].lat,routePoints[10].lon]],{color:'#ffd36b',weight:3,opacity:.8,dashArray:'10 8'}).addTo(map);
+      L.polyline(east,{color:'#79a8ff',weight:4,opacity:.85}).addTo(map);
+      routePoints.forEach(p=>{
+        const icon=L.divIcon({className:'',html:`<div class="marker-number">${p.n}</div>`,iconSize:[34,34],iconAnchor:[17,17]});
+        L.marker([p.lat,p.lon],{icon}).addTo(map).bindPopup(`<b>${p.name}</b><br><span>${p.day}</span>`);
+      });
+      map.fitBounds(L.latLngBounds(routePoints.map(p=>[p.lat,p.lon])),{padding:[28,28]});
+    }
+
+    const wmo={0:'שמשי',1:'בהיר בעיקר',2:'מעונן חלקית',3:'מעונן',45:'ערפל',48:'ערפל קפוא',51:'טפטוף קל',53:'טפטוף',55:'טפטוף חזק',61:'גשם קל',63:'גשם',65:'גשם חזק',71:'שלג קל',73:'שלג',75:'שלג כבד',80:'ממטרים קלים',81:'ממטרים',82:'ממטרים חזקים',95:'סופות רעמים',96:'סופות רעמים',99:'סופות רעמים'};
+    const weatherIcon=c=>c===0?'☀️':c<=3?'⛅':c<=48?'🌫️':c<=65?'🌧️':c<=75?'❄️':c<=82?'🌦️':'⛈️';
+
+    function weatherSkeleton(){
+      document.getElementById('weatherGrid').innerHTML=weatherStops.map((s,i)=>`<div class="weather-card glass" id="w${i}"><div class="weather-title"><h3>${s.name}</h3><span class="weather-date">ביקור ${new Date(s.date+'T12:00:00').toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'})}</span></div><div class="weather-now">…</div><div class="weather-desc">טוען מזג אוויר חי</div><div class="climate"><b>טווח שימושי:</b> ${s.climate}</div></div>`).join('');
+    }
+
+    async function loadWeather(stop,i){
+      const url=`https://api.open-meteo.com/v1/forecast?latitude=${stop.lat}&longitude=${stop.lon}&current=temperature_2m,apparent_temperature,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&temperature_unit=celsius&timezone=auto&forecast_days=16`;
+      try{
+        const r=await fetch(url); if(!r.ok) throw new Error('weather'); const d=await r.json();
+        const c=d.current||{}; const idx=(d.daily?.time||[]).indexOf(stop.date);
+        const forecast=idx>=0 ? `<div class="forecast-line"><div><span>ביום הביקור</span><b>${Math.round(d.daily.temperature_2m_min[idx])}°–${Math.round(d.daily.temperature_2m_max[idx])}°</b></div><div><span>סיכוי גשם</span><b>${d.daily.precipitation_probability_max[idx] ?? 0}%</b></div></div><div class="weather-state"><span class="weather-dot"></span>תחזית זמינה לתאריך הביקור</div>` : `<div class="weather-state">📅 תאריך הביקור עדיין מחוץ לטווח התחזית; הכרטיס יתעדכן אוטומטית כשיתקרב.</div>`;
+        document.getElementById(`w${i}`).innerHTML=`<div class="weather-title"><h3>${stop.name}</h3><span class="weather-date">ביקור ${new Date(stop.date+'T12:00:00').toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'})}</span></div><div class="weather-now">${weatherIcon(c.weather_code)} ${Math.round(c.temperature_2m)}°</div><div class="weather-desc">עכשיו: ${wmo[c.weather_code]||'מזג אוויר משתנה'} · מרגיש כמו ${Math.round(c.apparent_temperature)}°</div>${forecast}<div class="climate"><b>טווח שימושי:</b> ${stop.climate}</div>`;
+      }catch(e){
+        document.getElementById(`w${i}`).innerHTML=`<div class="weather-title"><h3>${stop.name}</h3><span class="weather-date">ביקור ${new Date(stop.date+'T12:00:00').toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'})}</span></div><div class="weather-now">🌤️</div><div class="weather-desc">לא הצלחתי למשוך כרגע נתון חי.</div><div class="climate"><b>טווח שימושי:</b> ${stop.climate}</div><div class="weather-state">צריך חיבור לאינטרנט לנתונים חיים.</div>`;
+      }
+    }
+    async function loadAllWeather(){weatherSkeleton(); for(let i=0;i<weatherStops.length;i+=3){await Promise.all(weatherStops.slice(i,i+3).map((s,j)=>loadWeather(s,i+j)));}}
+
+    const storageKey='hagit60-checklist-v3';
+    function defaultState(){
+      return baseChecklist.flatMap((g,gi)=>g.items.map((text,ii)=>({id:`b-${gi}-${ii}`,cat:g.cat,text,done:false,custom:false})));
+    }
+    function getState(){try{return JSON.parse(localStorage.getItem(storageKey))||defaultState()}catch{return defaultState()}}
+    function saveState(s){localStorage.setItem(storageKey,JSON.stringify(s));renderChecklist();toast('נשמר ✨')}
+    function renderChecklist(){
+      const s=getState(); const cats=[...new Set(s.map(x=>x.cat))];
+      document.getElementById('checklist').innerHTML=cats.map(cat=>`<div class="category"><h4>${cat}</h4>${s.filter(x=>x.cat===cat).map(x=>`<label class="check-item ${x.done?'done':''}"><input type="checkbox" ${x.done?'checked':''} onchange="toggleItem('${x.id}')"><span class="item-text">${escapeHtml(x.text)}</span>${x.custom?`<button type="button" class="delete-item" onclick="event.preventDefault();deleteItem('${x.id}')">×</button>`:''}</label>`).join('')}</div>`).join('');
+      const done=s.filter(x=>x.done).length; const pct=s.length?Math.round(done/s.length*100):0; document.getElementById('progressBar').style.width=pct+'%'; document.getElementById('progressText').textContent=`${pct}% ארוז · ${done}/${s.length}`;
+    }
+    function toggleItem(id){const s=getState();const x=s.find(i=>i.id===id);if(x)x.done=!x.done;localStorage.setItem(storageKey,JSON.stringify(s));renderChecklist()}
+    function addCustomItem(){const input=document.getElementById('newItem');const text=input.value.trim();if(!text)return;const s=getState();s.push({id:'c-'+Date.now(),cat:'הוספנו בעצמנו',text,done:false,custom:true});input.value='';saveState(s)}
+    function deleteItem(id){saveState(getState().filter(x=>x.id!==id))}
+    function resetChecklist(){const s=getState().map(x=>({...x,done:false}));saveState(s)}
+    function copyChecklist(){const s=getState();const cats=[...new Set(s.map(x=>x.cat))];const txt=cats.map(c=>`${c}\n`+s.filter(x=>x.cat===c).map(x=>`${x.done?'✓':'☐'} ${x.text}`).join('\n')).join('\n\n');navigator.clipboard?.writeText(txt).then(()=>toast('הרשימה הועתקה 📋')).catch(()=>toast('לא הצלחתי להעתיק'))}
+    function escapeHtml(t){return t.replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]))}
+    function toast(t){const el=document.getElementById('toast');el.textContent=t;el.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>el.classList.remove('show'),1400)}
+    document.getElementById('newItem').addEventListener('keydown',e=>{if(e.key==='Enter')addCustomItem()});
+
+    function party(){
+      const canvas=document.getElementById('confetti'),ctx=canvas.getContext('2d');canvas.width=innerWidth;canvas.height=innerHeight;
+      const colors=['#ffd36b','#ff62a9','#79a8ff','#64e6c3','#ff8a78','#ffffff'];
+      const bits=Array.from({length:180},()=>({x:Math.random()*canvas.width,y:-20-Math.random()*canvas.height*.35,vx:(Math.random()-.5)*4,vy:3+Math.random()*5,r:3+Math.random()*6,a:Math.random()*Math.PI*2,c:colors[Math.floor(Math.random()*colors.length)]}));
+      let f=0;function tick(){ctx.clearRect(0,0,canvas.width,canvas.height);bits.forEach(b=>{b.x+=b.vx;b.y+=b.vy;b.a+=.12;ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.a);ctx.fillStyle=b.c;ctx.fillRect(-b.r,-b.r/2,b.r*2,b.r);ctx.restore()});f++;if(f<190)requestAnimationFrame(tick);else ctx.clearRect(0,0,canvas.width,canvas.height)}tick();toast('HAGIT 60 — AMERICA IS YOURS 🥂');
+    }
+
+    renderTimeline(); renderChecklist();
+    window.addEventListener('load',()=>{initMap();loadAllWeather();setTimeout(()=>party(),700)});
+  </script>
+</body>
+</html>
