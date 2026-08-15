@@ -1,0 +1,769 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#080510" />
+  <title>HAGIT 60 — The American Birthday Journey</title>
+  <link rel="preconnect" href="https://unpkg.com" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Montserrat:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --bg:#0c1020; --bg2:#10182f; --card:rgba(23,31,59,.82); --card2:rgba(34,43,76,.72);
+      --ink:#fff9f2; --muted:#cbd2e6; --gold:#ffd36b; --peach:#ff8a78; --pink:#ff62a9;
+      --mint:#64e6c3; --blue:#79a8ff; --danger:#ff6b79; --line:rgba(255,255,255,.12);
+      --shadow:0 28px 80px rgba(0,0,0,.34); --radius:24px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;background:var(--bg)}
+    body{margin:0;color:var(--ink);font-family:Arial,"Noto Sans Hebrew",system-ui,sans-serif;line-height:1.5;overflow-x:hidden;
+      background:
+        radial-gradient(circle at 15% -10%,rgba(255,98,169,.26),transparent 30%),
+        radial-gradient(circle at 95% 5%,rgba(121,168,255,.24),transparent 30%),
+        radial-gradient(circle at 50% 80%,rgba(100,230,195,.11),transparent 36%),
+        linear-gradient(180deg,#0a0e1b 0%,#10162a 48%,#0b1020 100%);
+    }
+    button,input{font:inherit} button{cursor:pointer} a{color:inherit}
+    .wrap{width:min(1200px,calc(100% - 28px));margin:auto}
+    .glass{background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+    .eyebrow{font-size:12px;font-weight:900;letter-spacing:.17em;text-transform:uppercase;color:var(--gold)}
+    .muted{color:var(--muted)}
+    .section{padding:68px 0}
+    .section-title{font-size:clamp(30px,5vw,52px);line-height:1.05;margin:8px 0 12px;font-weight:950;letter-spacing:-.03em}
+    .section-copy{max-width:760px;color:var(--muted);font-size:17px;margin:0 0 28px}
+    .pill{display:inline-flex;gap:8px;align-items:center;padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.06);font-size:13px;font-weight:800}
+
+    .hero{min-height:92vh;display:grid;place-items:center;position:relative;padding:50px 0 38px;overflow:hidden}
+    .hero:before,.hero:after{content:"";position:absolute;border-radius:50%;filter:blur(4px);opacity:.65;pointer-events:none}
+    .hero:before{width:420px;height:420px;background:radial-gradient(circle,var(--pink),transparent 70%);left:-220px;top:5%}
+    .hero:after{width:520px;height:520px;background:radial-gradient(circle,var(--blue),transparent 70%);right:-280px;bottom:-100px}
+    .stars{position:absolute;inset:0;opacity:.35;background-image:radial-gradient(#fff 1px,transparent 1px);background-size:44px 44px;mask-image:linear-gradient(to bottom,#000,transparent 85%)}
+    .hero-card{position:relative;z-index:2;text-align:center;padding:48px 32px 34px;border-radius:34px;max-width:980px;margin:auto}
+    .hero-badge{display:inline-flex;align-items:center;gap:9px;background:linear-gradient(90deg,rgba(255,211,107,.16),rgba(255,98,169,.13));border:1px solid rgba(255,211,107,.35);padding:9px 15px;border-radius:999px;font-weight:900}
+    h1{font-size:clamp(50px,10vw,106px);line-height:.88;margin:24px 0 14px;letter-spacing:-.055em;font-weight:1000}
+    h1 .sixty{background:linear-gradient(100deg,var(--gold),#fff0a4,var(--peach),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+    .hero-sub{font-size:clamp(18px,3vw,27px);font-weight:800;color:#f7efff;margin:0 auto 22px;max-width:780px}
+    .hero-meta{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:22px 0}
+    .hero-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:26px}
+    .btn{border:0;border-radius:16px;padding:13px 18px;font-weight:900;transition:.2s transform,.2s opacity;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
+    .btn:hover{transform:translateY(-2px)}
+    .btn-primary{background:linear-gradient(135deg,var(--gold),#ff9b69);color:#1b1321}
+    .btn-secondary{background:rgba(255,255,255,.08);color:var(--ink);border:1px solid var(--line)}
+    .countdown{display:grid;grid-template-columns:repeat(4,minmax(80px,1fr));gap:10px;max-width:650px;margin:26px auto 0}
+    .count-box{padding:14px 8px;border-radius:18px;background:rgba(255,255,255,.055);border:1px solid var(--line)}
+    .count-num{display:block;font-size:30px;font-weight:1000;color:var(--gold);line-height:1}.count-label{font-size:12px;color:var(--muted);font-weight:800;margin-top:5px}
+
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:-22px;position:relative;z-index:4}
+    .stat{padding:22px;border-radius:22px;text-align:center}.stat strong{font-size:31px;display:block;color:var(--gold)}.stat span{color:var(--muted);font-size:13px;font-weight:800}
+
+    .alert-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:16px}
+    .temp-swing{border-radius:28px;padding:28px;background:linear-gradient(135deg,rgba(121,168,255,.13),rgba(255,98,169,.12));border:1px solid var(--line)}
+    .temp-scale{display:flex;align-items:center;gap:12px;margin:22px 0 8px}.temp-end{min-width:86px;text-align:center}.temp-end b{font-size:28px;display:block}.temp-end small{color:var(--muted)}
+    .scale{height:14px;border-radius:999px;flex:1;background:linear-gradient(90deg,#7fd4ff,#80f0c6,#ffe27a,#ff8d63,#ff5c72);box-shadow:0 0 30px rgba(255,141,99,.2)}
+    .warning{border-radius:28px;padding:28px}.warning h3{margin:0 0 8px;font-size:24px}.warning ul{margin:12px 0 0;padding-right:20px}.warning li{margin:8px 0;color:var(--muted)}
+
+    .map-shell{border-radius:30px;padding:12px;overflow:hidden}.map-top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 10px 16px;flex-wrap:wrap}
+    #map{height:540px;border-radius:22px;background:#17213a;z-index:1}.map-fallback{display:none;height:540px;border-radius:22px;align-items:center;justify-content:center;text-align:center;padding:30px;background:linear-gradient(135deg,#17213a,#221d3e)}
+    .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#11172b;color:white}.leaflet-popup-content{font-family:Arial,"Noto Sans Hebrew",sans-serif;direction:rtl;min-width:180px}
+    .marker-number{background:linear-gradient(135deg,var(--gold),var(--peach));width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:#211426;font-weight:1000;border:3px solid white;box-shadow:0 7px 18px rgba(0,0,0,.35)}
+
+    .timeline{display:grid;gap:12px}.day{display:grid;grid-template-columns:82px 1fr;gap:15px;padding:18px;border-radius:22px;border:1px solid var(--line);background:rgba(255,255,255,.045);transition:.2s}
+    .day:hover{background:rgba(255,255,255,.07);transform:translateY(-1px)}
+    .day-no{text-align:center;border-left:1px solid var(--line);padding-left:12px}.day-no strong{display:block;font-size:27px;color:var(--gold)}.day-no span{font-size:12px;color:var(--muted);font-weight:800}
+    .day h3{margin:0 0 4px;font-size:20px}.day p{margin:0;color:var(--muted)}.day-tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.mini-tag{font-size:11px;font-weight:900;padding:5px 8px;border-radius:999px;background:rgba(121,168,255,.1);border:1px solid rgba(121,168,255,.2);color:#d9e4ff}
+
+    .weather-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .weather-card{padding:20px;border-radius:24px;position:relative;overflow:hidden;min-height:220px}.weather-card:before{content:"";position:absolute;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(255,211,107,.2),transparent 70%);left:-50px;top:-50px}
+    .weather-title{display:flex;align-items:center;justify-content:space-between;gap:8px}.weather-title h3{font-size:20px;margin:0}.weather-date{font-size:11px;color:var(--muted);font-weight:800}
+    .weather-now{font-size:42px;font-weight:1000;margin:12px 0 2px}.weather-desc{color:var(--muted);font-size:14px}.forecast-line{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px}.forecast-line b{display:block;font-size:18px;color:var(--gold)}
+    .weather-state{font-size:12px;color:var(--muted);margin-top:10px}.weather-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--mint);margin-left:5px}
+    .climate{margin-top:10px;border-radius:14px;padding:9px 11px;background:rgba(255,255,255,.05);font-size:12px;color:#e7eaf5}.climate b{color:var(--gold)}
+
+    .packing-layout{display:grid;grid-template-columns:.85fr 1.15fr;gap:18px;align-items:start}
+    .packing-guide{border-radius:28px;padding:24px;position:sticky;top:12px}.packing-guide h3{font-size:25px;margin:0 0 4px}.packing-guide .big-number{font-size:54px;font-weight:1000;color:var(--gold);line-height:1;margin:18px 0 8px}.packing-guide ul{padding-right:20px;margin:14px 0}.packing-guide li{margin:7px 0;color:var(--muted)}
+    .check-shell{border-radius:28px;padding:22px}.progress-row{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:16px}.progress-wrap{flex:1;height:11px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}.progress-bar{height:100%;width:0;background:linear-gradient(90deg,var(--mint),var(--gold),var(--pink));transition:.25s}
+    .category{margin:18px 0}.category h4{font-size:17px;margin:0 0 10px;color:#fff0c7}.check-item{display:flex;align-items:center;gap:10px;padding:10px 11px;border-radius:13px;margin:6px 0;background:rgba(255,255,255,.04);border:1px solid transparent}.check-item:hover{border-color:var(--line)}
+    .check-item input{width:19px;height:19px;accent-color:#64e6c3}.check-item.done .item-text{text-decoration:line-through;color:#8490aa}.item-text{flex:1}.delete-item{border:0;background:transparent;color:#9aa5bd;font-size:18px;padding:2px 6px}.delete-item:hover{color:var(--danger)}
+    .add-row{display:flex;gap:8px;margin-top:15px}.add-row input{min-width:0;flex:1;padding:12px 13px;border-radius:13px;border:1px solid var(--line);background:rgba(0,0,0,.16);color:white;outline:none}.add-row input:focus{border-color:rgba(255,211,107,.55)}
+
+    .tips-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.tip{padding:20px;border-radius:22px}.tip .icon{font-size:28px}.tip h3{font-size:18px;margin:7px 0}.tip p{color:var(--muted);margin:0;font-size:14px}
+    .flight-card{display:grid;grid-template-columns:1fr 1fr;gap:16px}.flight-panel{padding:24px;border-radius:26px}.flight-panel h3{margin:0 0 10px;font-size:23px}.flight-panel ul{padding-right:20px;margin:0}.flight-panel li{margin:8px 0;color:var(--muted)}
+
+    .hotel-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.hotel{padding:15px;border-radius:18px;background:rgba(255,255,255,.045);border:1px solid var(--line)}.hotel b{display:block;color:#fff4d0}.hotel span{font-size:13px;color:var(--muted)}
+    .privacy{border-radius:24px;padding:20px;border:1px solid rgba(255,211,107,.22);background:rgba(255,211,107,.07);margin-top:22px}
+
+    .feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .feature-card{border-radius:24px;overflow:hidden;border:1px solid var(--line);background:rgba(255,255,255,.045);transition:.22s transform,.22s border-color}
+    .feature-card:hover{transform:translateY(-3px);border-color:rgba(255,211,107,.32)}
+    .feature-img{height:180px;background-size:cover;background-position:center;position:relative}
+    .feature-img:after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(8,12,24,.8),transparent 70%)}
+    .feature-body{padding:18px}.feature-body h3{margin:0 0 6px;font-size:20px}.feature-body p{margin:0;color:var(--muted);font-size:14px}
+    .card-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.mini-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 10px;border-radius:11px;background:rgba(255,255,255,.07);border:1px solid var(--line);text-decoration:none;font-weight:850;font-size:12px}.mini-btn:hover{background:rgba(255,255,255,.12)}
+    .hotel-grid-pro{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.hotel-pro{padding:20px;border-radius:24px;position:relative;overflow:hidden}.hotel-pro:before{content:"";position:absolute;width:130px;height:130px;border-radius:50%;background:radial-gradient(circle,rgba(255,211,107,.13),transparent 70%);left:-40px;top:-35px}.hotel-pro h3{margin:0 0 4px;font-size:20px}.hotel-pro .nights{font-size:12px;color:var(--gold);font-weight:900}.hotel-pro .hotel-name{font-size:14px;color:#f5f0ff;margin-top:8px}.hotel-pro .area{font-size:13px;color:var(--muted);margin-top:5px}.hotel-pro .card-actions{position:relative;z-index:2}
+    .watch-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.watch-card{padding:22px;border-radius:24px}.watch-card .watch-icon{font-size:34px}.watch-card h3{margin:8px 0 4px}.watch-card p{color:var(--muted);font-size:14px;margin:0}.watch-card a{margin-top:14px}
+    .section-note{padding:14px 16px;border-radius:16px;border:1px solid rgba(255,211,107,.2);background:rgba(255,211,107,.06);color:#efe5c7;font-size:13px;margin:18px 0}
+    footer{padding:42px 0 60px;color:#95a0b8;text-align:center;font-size:13px}.footer-links{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:10px}.footer-links a{color:#d8def0}
+    #confetti{position:fixed;inset:0;pointer-events:none;z-index:9999}
+    .toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,20px);padding:12px 16px;border-radius:14px;background:#fff;color:#111;font-weight:900;opacity:0;transition:.25s;z-index:10000;box-shadow:0 18px 50px rgba(0,0,0,.3)}.toast.show{opacity:1;transform:translate(-50%,0)}
+    .nav{position:sticky;top:0;z-index:20;background:rgba(8,12,24,.76);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}.nav-in{display:flex;justify-content:space-between;align-items:center;gap:15px;height:58px}.brand{font-weight:1000;letter-spacing:-.02em}.nav-links{display:flex;gap:14px;font-size:13px;font-weight:800}.nav-links a{text-decoration:none;color:#cbd2e6}.nav-links a:hover{color:white}
+
+
+    /* HAGIT 60 — DAY WORLDS */
+    .day-world-toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin:20px 0 18px}
+    .day-jump{display:flex;gap:7px;overflow-x:auto;padding:4px 0 10px;scrollbar-width:thin}
+    .day-jump button{min-width:40px;height:40px;border-radius:13px;border:1px solid var(--line);background:rgba(255,255,255,.055);color:var(--ink);font-weight:950}
+    .day-jump button:hover,.day-jump button.active{background:linear-gradient(135deg,rgba(255,211,107,.24),rgba(255,98,169,.20));border-color:rgba(255,211,107,.5);color:#fff6ce}
+    .trip-now{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:18px 20px;border-radius:22px;margin:22px 0;background:linear-gradient(120deg,rgba(255,211,107,.10),rgba(121,168,255,.10),rgba(255,98,169,.10));border:1px solid rgba(255,211,107,.24)}
+    .trip-now .now-icon{font-size:34px}.trip-now h3{margin:0 0 3px;font-size:18px}.trip-now p{margin:0;color:var(--muted);font-size:13px}
+    .day-worlds{display:grid;gap:16px}
+    .day-world{border-radius:28px;overflow:hidden;border:1px solid var(--line);background:linear-gradient(145deg,rgba(27,36,67,.90),rgba(17,23,45,.88));box-shadow:var(--shadow)}
+    .day-world.today{border-color:rgba(255,211,107,.65);box-shadow:0 24px 90px rgba(255,211,107,.12)}
+    .day-world-head{display:grid;grid-template-columns:92px 1fr auto;gap:17px;align-items:center;padding:20px;cursor:pointer;position:relative}
+    .day-world-head:after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 85% 10%,rgba(255,98,169,.11),transparent 36%);pointer-events:none}
+    .day-orb{width:72px;height:72px;border-radius:22px;display:grid;place-items:center;text-align:center;background:linear-gradient(145deg,rgba(255,211,107,.18),rgba(255,98,169,.15));border:1px solid rgba(255,211,107,.26)}
+    .day-orb b{font-size:29px;color:var(--gold);line-height:1}.day-orb small{font-size:10px;color:var(--muted);font-weight:900;margin-top:4px}
+    .day-world-title h3{margin:0 0 5px;font-size:clamp(19px,3vw,26px)}.day-world-title p{margin:0;color:var(--muted);font-size:14px}
+    .day-head-meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.day-head-meta .mini-tag{background:rgba(255,255,255,.055)}
+    .day-expand{position:relative;z-index:2;width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:white;font-size:18px;transition:.2s transform}
+    .day-world.open .day-expand{transform:rotate(180deg)}
+    .day-world-body{display:none;padding:0 20px 22px}.day-world.open .day-world-body{display:block}
+    .day-quick{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}.quick-cell{padding:13px;border-radius:16px;background:rgba(255,255,255,.045);border:1px solid var(--line)}.quick-cell small{display:block;color:var(--muted);font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.06em}.quick-cell b{display:block;margin-top:4px;font-size:13px;color:#fff3cb}
+    .day-story{padding:17px 18px;border-radius:20px;background:linear-gradient(120deg,rgba(121,168,255,.08),rgba(100,230,195,.06));border:1px solid var(--line);margin-bottom:14px}.day-story b{color:var(--gold)}.day-story p{margin:6px 0 0;color:#edf0fa;font-size:14px}
+    .day-columns{display:grid;grid-template-columns:1.08fr .92fr;gap:14px}
+    .day-panel{padding:18px;border-radius:21px;background:rgba(255,255,255,.04);border:1px solid var(--line)}.day-panel h4{margin:0 0 12px;font-size:17px;color:#fff2c6}
+    .restaurant-list{display:grid;gap:8px}.restaurant{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:11px 12px;border-radius:15px;background:rgba(0,0,0,.14);border:1px solid transparent}.restaurant:hover{border-color:rgba(255,211,107,.22)}.restaurant strong{display:block;font-size:13px}.restaurant p{margin:2px 0 0;color:var(--muted);font-size:11px}.restaurant-tag{font-size:10px;color:var(--mint);font-weight:900}.restaurant-actions{display:flex;gap:5px}.restaurant-actions a{text-decoration:none;padding:6px 7px;border-radius:9px;background:rgba(255,255,255,.07);font-size:11px;border:1px solid var(--line);white-space:nowrap}
+    .free-list{display:grid;gap:9px}.free-item{padding:12px;border-radius:15px;background:rgba(121,168,255,.055);border:1px solid rgba(121,168,255,.14)}.free-item b{font-size:13px}.free-item p{margin:3px 0 8px;font-size:11px;color:var(--muted)}
+    .spark-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}.spark{padding:13px;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.035)}.spark .spark-icon{font-size:21px}.spark b{display:block;font-size:12px;margin-top:5px}.spark p{font-size:11px;color:var(--muted);margin:3px 0 0}
+    .hotel-night{margin-top:14px;padding:15px 16px;border-radius:18px;background:linear-gradient(120deg,rgba(255,211,107,.07),rgba(255,98,169,.055));border:1px solid rgba(255,211,107,.18);display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}.hotel-night .hotel-copy b{display:block;color:#fff0bd}.hotel-night .hotel-copy span{font-size:12px;color:var(--muted)}
+    .day-links{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}.day-link{display:inline-flex;align-items:center;gap:6px;text-decoration:none;padding:8px 10px;border-radius:11px;border:1px solid var(--line);background:rgba(255,255,255,.05);font-size:11px;font-weight:900}.day-link:hover{background:rgba(255,255,255,.10)}
+    .day-research-note{margin-top:18px;font-size:11px;color:#9fa9c2;padding:11px 13px;border-radius:13px;background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.12)}
+
+    @media (max-width:900px){
+      .stats{grid-template-columns:repeat(2,1fr)}.alert-grid,.packing-layout,.flight-card{grid-template-columns:1fr}.packing-guide{position:static}.weather-grid,.tips-grid,.feature-grid,.watch-grid{grid-template-columns:repeat(2,1fr)}.hotel-grid-pro{grid-template-columns:1fr}.day-columns{grid-template-columns:1fr}.day-quick{grid-template-columns:repeat(2,1fr)}#map,.map-fallback{height:440px}.nav-links{display:none}
+    }
+    @media (max-width:620px){
+      .hero{min-height:auto;padding-top:34px}.hero-card{padding:36px 18px 26px;border-radius:28px}.countdown{grid-template-columns:repeat(2,1fr)}.weather-grid,.tips-grid,.hotel-grid,.feature-grid,.watch-grid,.hotel-grid-pro{grid-template-columns:1fr}.day{grid-template-columns:62px 1fr}.day-world-head{grid-template-columns:68px 1fr auto;padding:15px}.day-orb{width:58px;height:58px;border-radius:18px}.day-orb b{font-size:23px}.day-world-body{padding:0 14px 16px}.day-quick{grid-template-columns:1fr 1fr}.spark-grid{grid-template-columns:1fr}.trip-now{grid-template-columns:auto 1fr}.trip-now .btn{grid-column:1/-1}.restaurant{grid-template-columns:1fr}.restaurant-actions{justify-content:flex-start}.day-no strong{font-size:23px}.stats{gap:8px}.stat{padding:15px 8px}.stat strong{font-size:25px}.section{padding:50px 0}#map,.map-fallback{height:390px}.temp-end{min-width:64px}.temp-end b{font-size:22px}
+    }
+    @media print{.nav,.hero-actions,#confetti,.btn,.add-row,.delete-item{display:none!important}body{background:white;color:#111}.glass,.day,.tip,.hotel,.weather-card{box-shadow:none;background:white;color:#111;border:1px solid #ddd}.muted,.day p,.tip p,.hotel span{color:#555}.section{padding:18px 0}.hero{min-height:0}.hero-card{border:0}.packing-layout{grid-template-columns:1fr}.packing-guide{position:static}}
+
+
+    /* =========================================================
+       HAGIT 60 — DARK AVIATION / PURPLE LUXURY REDESIGN
+       Original visual language inspired by aviation editorial UI.
+       ========================================================= */
+    :root{
+      --bg:#080510;--bg2:#10081f;--card:rgba(21,12,38,.78);--card2:rgba(34,18,58,.72);
+      --ink:#fbf7ff;--muted:#bdb2cc;--gold:#f6d79d;--peach:#ff9dcf;--pink:#ff55b8;
+      --mint:#c4a3ff;--blue:#8d70ff;--danger:#ff6f9f;--line:rgba(229,206,255,.14);
+      --purple:#7b39ff;--violet:#b65cff;--lav:#d8bdff;--cream:#f5efff;--night:#080510;
+      --shadow:0 30px 100px rgba(4,0,12,.55);--radius:26px;
+    }
+    html{background:var(--night)}
+    body{font-family:"Heebo",Arial,sans-serif;background:
+      radial-gradient(circle at 90% 8%,rgba(126,48,255,.18),transparent 28%),
+      radial-gradient(circle at 8% 34%,rgba(255,70,181,.09),transparent 26%),
+      linear-gradient(180deg,#080510 0%,#0b0615 42%,#10081e 68%,#080510 100%);color:var(--ink)}
+    ::selection{background:#a94fff;color:#fff}
+    .wrap{width:min(1240px,calc(100% - 34px))}
+    .glass{background:linear-gradient(145deg,rgba(31,16,52,.74),rgba(14,8,27,.78));border:1px solid rgba(221,193,255,.14);box-shadow:0 24px 80px rgba(2,0,10,.38);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+    .section{padding:92px 0;position:relative}
+    .section:before{content:"";position:absolute;width:1px;height:74px;top:0;right:50%;background:linear-gradient(to bottom,transparent,rgba(190,139,255,.34),transparent)}
+    .eyebrow{font-family:"Montserrat",sans-serif;font-weight:500;letter-spacing:.25em;color:#cfaaff;font-size:10px}
+    .section-title{font-family:"Heebo",sans-serif;font-size:clamp(34px,5vw,60px);font-weight:700;letter-spacing:-.045em;max-width:900px}
+    .section-copy{color:#b9aec9;font-weight:300;font-size:17px}
+    .pill{font-family:"Montserrat","Heebo",sans-serif;font-size:10px;letter-spacing:.08em;font-weight:500;padding:9px 13px;border-color:rgba(221,193,255,.18);background:rgba(245,239,255,.055);color:#ece1ff}
+    .btn{border-radius:999px;padding:13px 19px;font-family:"Montserrat","Heebo",sans-serif;font-size:11px;letter-spacing:.06em;font-weight:600;transition:.28s transform,.28s background,.28s box-shadow,.28s border-color}
+    .btn:hover{transform:translateY(-2px);box-shadow:0 12px 34px rgba(107,43,255,.18)}
+    .btn-primary{background:linear-gradient(120deg,#f4edff,#cda9ff);color:#140b24;box-shadow:0 12px 36px rgba(190,134,255,.18)}
+    .btn-secondary{background:rgba(255,255,255,.04);border:1px solid rgba(228,205,255,.18);color:#f6efff}
+
+    /* Navigation */
+    .aviation-nav{background:rgba(8,5,16,.72);border-bottom:1px solid rgba(207,170,255,.12);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
+    .nav-in{height:68px;direction:ltr}.aviation-brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-family:"Montserrat",sans-serif;color:white}.aviation-brand span{font-size:17px;font-weight:600;letter-spacing:.06em}.aviation-brand i{height:16px;width:1px;background:linear-gradient(#7540ff,#ff5bb8)}.aviation-brand small{font-size:9px;font-weight:400;letter-spacing:.2em;color:#c6bad4}.nav-links{direction:rtl;font-size:12px;font-weight:400;gap:20px}.nav-links a{color:#bfb3cc}.nav-links a:hover{color:#fff}.nav-party{padding:9px 14px;background:linear-gradient(120deg,rgba(119,50,255,.16),rgba(255,69,181,.12));border:1px solid rgba(205,151,255,.26);color:#e8d5ff}
+
+    /* Hero */
+    .aviation-hero{min-height:calc(100vh - 68px);display:flex;align-items:center;padding:46px 0 50px;position:relative;isolation:isolate;overflow:hidden;background:
+      radial-gradient(ellipse at 67% 44%,rgba(202,65,225,.24),transparent 26%),
+      radial-gradient(ellipse at 70% 54%,rgba(255,65,163,.16),transparent 20%),
+      radial-gradient(ellipse at 20% 20%,rgba(88,49,193,.18),transparent 30%),
+      linear-gradient(120deg,#070510 0%,#0c0718 45%,#180a28 72%,#070510 100%)}
+    .aviation-hero:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(4,3,10,.35),transparent 40%,rgba(5,2,10,.18));z-index:-1}
+    .aviation-grid{position:absolute;inset:0;opacity:.13;background-image:linear-gradient(rgba(210,170,255,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(210,170,255,.08) 1px,transparent 1px);background-size:80px 80px;mask-image:linear-gradient(to bottom,transparent,#000 28%,#000 76%,transparent)}
+    .aviation-stars{position:absolute;inset:0;opacity:.48;background-image:radial-gradient(circle,#fff 0 1px,transparent 1.4px),radial-gradient(circle,#d5aaff 0 1px,transparent 1.5px);background-position:0 0,32px 28px;background-size:98px 98px,140px 140px;mask-image:linear-gradient(to bottom,#000,transparent 78%)}
+    .usa-watermark{position:absolute;z-index:-1;left:-3vw;bottom:-4vh;font-family:"Montserrat",sans-serif;font-size:min(30vw,430px);font-weight:800;letter-spacing:-.08em;color:rgba(235,218,255,.022);line-height:.7;user-select:none}
+    .hero-wrap{position:relative;z-index:2}.aviation-shell{display:grid;grid-template-columns:minmax(0,.93fr) minmax(460px,1.07fr);align-items:center;gap:20px;direction:ltr;min-height:690px}.hero-copy{position:relative;z-index:5;text-align:left;padding:40px 0 40px 6px}.hero-kicker{display:flex;align-items:center;gap:10px;font-family:"Montserrat",sans-serif;font-size:11px;letter-spacing:.27em;color:#d9c2f4;margin-bottom:24px}.live-dot{width:7px;height:7px;border-radius:50%;background:#ff58b9;box-shadow:0 0 0 6px rgba(255,88,185,.08),0 0 20px #ff58b9}
+    .aviation-title{font-family:"Montserrat",sans-serif;font-weight:200;font-size:clamp(54px,6.8vw,104px);letter-spacing:-.055em;line-height:.84;margin:0 0 28px;color:#f4eaff;text-transform:uppercase;max-width:760px}.aviation-title span,.aviation-title em{display:block;font-style:normal}.aviation-title em{background:linear-gradient(90deg,#ffffff 5%,#e2c3ff 46%,#ff8dc9 90%);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 60px rgba(187,102,255,.06)}
+    .sexy-sub{direction:rtl;text-align:right;max-width:610px;margin:0 0 20px;color:#c9bdd5;font-size:17px;font-weight:300;line-height:1.75}.hero-meta{justify-content:flex-start;direction:ltr;margin:20px 0 0}.sexy-countdown{margin:28px 0 0;max-width:590px;direction:ltr}.count-box{background:rgba(245,239,255,.035);border:1px solid rgba(218,186,255,.12);border-radius:4px;padding:14px 10px}.count-num{font-family:"Montserrat",sans-serif;font-weight:300;color:#ead9ff;font-size:29px}.count-label{font-family:"Montserrat","Heebo",sans-serif;font-weight:400;letter-spacing:.08em;color:#978aa5}.hero-actions{justify-content:flex-start;direction:ltr;margin-top:22px}
+    .plane-scene{position:relative;height:650px;display:grid;place-items:center;z-index:2}.plane-halo{position:absolute;width:72%;height:44%;left:14%;top:22%;border-radius:50%;background:radial-gradient(circle,rgba(255,67,179,.22),rgba(136,55,255,.16) 34%,transparent 69%);filter:blur(30px);animation:breathe 5.8s ease-in-out infinite}.jet-svg{position:absolute;width:110%;max-width:760px;height:auto;right:-4%;top:8%;overflow:visible;filter:drop-shadow(0 35px 45px rgba(0,0,0,.5));animation:planeFloat 7s ease-in-out infinite}.plane-group{transform-origin:center;animation:planePulse 6s ease-in-out infinite}.route-caption{position:absolute;top:7%;left:10%;right:8%;display:flex;align-items:center;justify-content:center;gap:13px;font-family:"Montserrat",sans-serif;font-size:10px;letter-spacing:.24em;color:#ab9ab9}.route-caption b{font-weight:300;color:#d9baff;letter-spacing:.12em}.plane-label{position:absolute;bottom:6%;left:4%;right:4%;display:flex;justify-content:space-between;align-items:center;gap:12px;font-family:"Montserrat",sans-serif;font-size:9px;letter-spacing:.16em;color:#8f819d}.plane-label strong{color:#e1ceef;font-weight:400;text-align:center}.hero-flightline{position:absolute;bottom:0;left:0;right:0;height:44px;border-top:1px solid rgba(215,184,255,.1);display:flex;align-items:center;justify-content:center;gap:16px;font-family:"Montserrat",sans-serif;font-size:8px;letter-spacing:.22em;color:#897a96;background:rgba(6,4,12,.26)}.hero-flightline b{font-weight:400;color:#b9a6c9}.hero-flightline i{display:block;width:min(12vw,150px);height:1px;background:linear-gradient(90deg,transparent,#a866ff,transparent)}
+    .hero-confetti .cf{position:absolute;display:block;width:6px;height:14px;border-radius:2px;background:#d7b4ff;opacity:.55;z-index:1;transform:rotate(25deg);box-shadow:0 0 18px rgba(204,150,255,.25)}.hero-confetti .c1{left:5%;top:18%;transform:rotate(18deg)}.hero-confetti .c2{left:14%;top:68%;background:#ff79c7;transform:rotate(72deg)}.hero-confetti .c3{left:34%;top:12%;width:4px;height:9px}.hero-confetti .c4{left:47%;top:81%;background:#f6d79d;transform:rotate(105deg)}.hero-confetti .c5{left:61%;top:14%;background:#ff77c5}.hero-confetti .c6{left:73%;top:73%;height:8px}.hero-confetti .c7{left:88%;top:18%;background:#f6d79d;transform:rotate(58deg)}.hero-confetti .c8{left:93%;top:58%;background:#9f75ff}.hero-confetti .c9{left:25%;top:43%;width:4px;height:4px;border-radius:50%;background:#fff}.hero-confetti .c10{left:81%;top:39%;width:5px;height:5px;border-radius:50%;background:#fff}.hero-confetti .c11{left:56%;top:8%;width:5px;height:5px;border-radius:50%;background:#ff9bd3}.hero-confetti .c12{left:39%;top:65%;width:5px;height:5px;border-radius:50%;background:#c5a1ff}
+    @keyframes planeFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-9px) scale(1.008)}}@keyframes planePulse{0%,100%{opacity:.94}50%{opacity:1}}@keyframes breathe{0%,100%{transform:scale(.96);opacity:.8}50%{transform:scale(1.06);opacity:1}}
+
+    /* Bright accents without losing the dark-luxury mood */
+    .stats{gap:12px;margin-top:-28px}.stat{border-radius:4px;padding:24px 18px;border:0;box-shadow:none}.stat:nth-child(odd){background:#f2eaff;color:#170d25}.stat:nth-child(even){background:linear-gradient(135deg,#6e36e9,#9b4cff);color:white}.stat strong{font-family:"Montserrat",sans-serif;font-weight:300;font-size:34px;color:inherit}.stat span{color:inherit;opacity:.7;font-weight:500}
+    .temp-swing,.warning{border-radius:16px}.scale{background:linear-gradient(90deg,#a675ff,#f0d6ff,#ff72bd)}
+    .map-shell{border-radius:16px;padding:9px;background:rgba(14,8,26,.9)}#map,.map-fallback{border-radius:10px}.marker-number{background:linear-gradient(135deg,#d8baff,#8a45ff);color:#170c29;border:2px solid #fff}
+
+    /* 20 day worlds */
+    .day-world-toolbar .btn{border-radius:999px}.day-jump button{border-radius:999px;font-family:"Montserrat",sans-serif;font-weight:500;background:rgba(255,255,255,.035)}.day-jump button:hover,.day-jump button.active{background:#f1e8ff;color:#160b25;border-color:#f1e8ff}
+    .trip-now{border-radius:14px;background:linear-gradient(110deg,rgba(99,39,216,.18),rgba(255,69,181,.09));border-color:rgba(189,129,255,.22)}
+    .day-world{border-radius:18px;background:linear-gradient(135deg,rgba(25,13,43,.94),rgba(9,6,19,.96));border-color:rgba(205,164,255,.12);box-shadow:0 30px 80px rgba(3,0,10,.36);position:relative}.day-world:before{content:"";position:absolute;inset:0 0 auto;height:1px;background:linear-gradient(90deg,transparent,rgba(192,126,255,.8),rgba(255,85,184,.55),transparent);opacity:.42}.day-world.today{border-color:#a765ff;box-shadow:0 0 0 1px rgba(167,101,255,.12),0 28px 90px rgba(99,40,180,.18)}
+    .day-world-head{padding:24px;grid-template-columns:82px 1fr auto}.day-world-head:after{background:radial-gradient(circle at 84% 20%,rgba(142,67,255,.13),transparent 31%)}.day-orb{border-radius:50%;width:66px;height:66px;background:radial-gradient(circle at 32% 22%,#d9c0ff,#8d4deb 44%,#241039 75%);border:1px solid rgba(231,210,255,.3);box-shadow:0 10px 35px rgba(123,57,255,.18)}.day-orb b{font-family:"Montserrat",sans-serif;color:white;font-weight:300}.day-world-title h3{font-size:clamp(20px,3vw,28px);font-weight:600;letter-spacing:-.025em}.mini-tag{border-radius:999px;background:rgba(171,114,255,.08);border-color:rgba(187,137,255,.15);color:#d8c2ec}.day-expand{border-radius:50%;background:transparent;border-color:rgba(217,188,255,.18)}
+    .quick-cell,.day-panel,.spark{border-radius:12px;background:rgba(245,239,255,.027);border-color:rgba(210,173,255,.11)}.quick-cell b{color:#ede2f8}.day-story{border-radius:12px;background:linear-gradient(120deg,rgba(117,53,241,.11),rgba(255,74,183,.055));border-color:rgba(205,166,255,.12)}.day-story b,.day-panel h4{color:#ddc2fa}.restaurant{border-radius:10px;background:rgba(0,0,0,.17)}.restaurant:hover{border-color:rgba(179,116,255,.28)}.restaurant-tag{color:#c6a3ff}.restaurant-actions a,.day-link,.mini-btn{border-radius:999px;background:rgba(255,255,255,.035);border-color:rgba(210,177,255,.13)}.restaurant-actions a:hover,.day-link:hover,.mini-btn:hover{background:rgba(154,83,255,.15);border-color:rgba(199,151,255,.25)}.free-item{border-radius:10px;background:rgba(124,67,255,.06);border-color:rgba(171,120,255,.13)}.hotel-night{border-radius:12px;background:linear-gradient(110deg,rgba(112,51,224,.11),rgba(255,74,177,.055));border-color:rgba(193,142,255,.16)}.hotel-night .hotel-copy b{color:#dec5fa}
+
+    /* Rest of the experience */
+    .weather-card,.packing-guide,.check-shell,.flight-panel,.hotel-pro,.watch-card,.tip{border-radius:16px}.weather-card:before,.hotel-pro:before{background:radial-gradient(circle,rgba(150,75,255,.2),transparent 70%)}.weather-now,.packing-guide .big-number{font-family:"Montserrat",sans-serif;color:#d9baff;font-weight:300}.progress-bar{background:linear-gradient(90deg,#7540ff,#bd5cff,#ff5bb8)}.check-item{border-radius:9px}.check-item input{accent-color:#9a57ff}.category h4,.flight-panel h3{color:#dfc7fb}.feature-card{border-radius:14px;background:#0e0819;border-color:rgba(207,169,255,.12)}.feature-card:hover{border-color:rgba(192,123,255,.35);box-shadow:0 22px 70px rgba(73,17,120,.22)}.feature-img{height:230px}.feature-img:after{background:linear-gradient(to top,rgba(8,4,18,.94),rgba(74,25,104,.12) 60%,rgba(130,42,151,.10))}.feature-body h3{font-size:22px}.hotel-pro{border-top:1px solid rgba(186,121,255,.28)}.watch-card .watch-icon,.tip .icon{filter:saturate(.72)}.section-note,.privacy{border-radius:12px;background:rgba(126,58,236,.07);border-color:rgba(190,135,255,.17);color:#d2c2df}
+    footer{border-top:1px solid rgba(211,177,255,.1);background:#06040b;padding-top:58px}
+
+    @media (max-width:1050px){.aviation-shell{grid-template-columns:1fr .92fr;min-height:650px}.aviation-title{font-size:clamp(48px,7.7vw,82px)}.plane-scene{height:580px}.jet-svg{width:122%;right:-10%}}
+    @media (max-width:900px){.aviation-shell{grid-template-columns:1fr;min-height:auto;padding:40px 0 66px}.hero-copy{text-align:center;padding:20px 0 0}.hero-kicker,.hero-meta,.hero-actions{justify-content:center}.sexy-sub{text-align:center;margin:0 auto 20px}.sexy-countdown{margin:28px auto 0}.plane-scene{height:460px;order:-1;margin-bottom:-60px}.jet-svg{width:80%;right:10%;top:-5%}.route-caption{top:1%}.usa-watermark{font-size:42vw}.hero-flightline{display:none}}
+    @media (max-width:620px){.aviation-nav .nav-in{height:60px}.aviation-hero{padding-top:12px}.aviation-shell{padding-top:8px}.plane-scene{height:340px;margin-bottom:-34px}.jet-svg{width:100%;right:0;top:-3%}.route-caption{font-size:7px;gap:8px}.plane-label{font-size:7px;bottom:3%}.aviation-title{font-size:clamp(44px,15vw,68px);line-height:.9;margin-bottom:20px}.hero-kicker{font-size:8px;letter-spacing:.22em;margin-bottom:18px}.sexy-sub{font-size:15px}.hero-meta{gap:7px}.pill{font-size:8px}.sexy-countdown{grid-template-columns:repeat(4,1fr);gap:6px}.count-box{padding:10px 4px}.count-num{font-size:22px}.count-label{font-size:8px}.hero-actions{gap:7px}.hero-actions .btn{flex:1;min-width:138px;padding:11px 12px}.stats{margin-top:-16px}.stat{padding:17px 8px}.stat strong{font-size:27px}.section{padding:66px 0}.day-world-head{grid-template-columns:58px 1fr auto;padding:16px}.day-orb{width:52px;height:52px}.feature-img{height:200px}}
+
+  </style>
+</head>
+<body>
+  <canvas id="confetti"></canvas>
+  <div class="toast" id="toast">נשמר ✨</div>
+
+  <nav class="nav aviation-nav">
+    <div class="wrap nav-in">
+      <a class="brand aviation-brand" href="#top" aria-label="Hagit 60 home"><span>H60</span><i></i><small>USA 2026</small></a>
+      <div class="nav-links">
+        <a href="#route">20 הימים</a><a href="#weather">מזג אוויר</a><a href="#hotels">מלונות</a><a href="#attractions">אטרקציות</a><a href="#watch">סרטונים</a><a href="#packing">מזוודה</a>
+      </div>
+      <button class="btn nav-party" onclick="party()">MAKE IT 60 ✦</button>
+    </div>
+  </nav>
+
+  <header class="hero aviation-hero" id="top">
+    <div class="aviation-grid"></div>
+    <div class="aviation-stars"></div>
+    <div class="usa-watermark" aria-hidden="true">USA</div>
+    <div class="hero-confetti" aria-hidden="true">
+      <i class="cf c1"></i><i class="cf c2"></i><i class="cf c3"></i><i class="cf c4"></i><i class="cf c5"></i><i class="cf c6"></i><i class="cf c7"></i><i class="cf c8"></i><i class="cf c9"></i><i class="cf c10"></i><i class="cf c11"></i><i class="cf c12"></i>
+    </div>
+    <div class="wrap hero-wrap">
+      <div class="aviation-shell">
+        <div class="hero-copy">
+          <div class="hero-kicker" dir="ltr"><span class="live-dot"></span> HAPPY BIRTHDAY, HAGIT</div>
+          <h1 class="aviation-title" dir="ltr"><span>SIXTY.</span><span>STATESIDE.</span><em>UNSTOPPABLE.</em></h1>
+          <p class="hero-sub sexy-sub">אמריקה הקסומה — 20 ימים מחוף לחוף, מלוס אנג׳לס ועד ניו יורק. יום הולדת 60 שעולה לגובה.</p>
+          <div class="hero-meta">
+            <span class="pill">17.08 → 05.09.2026</span>
+            <span class="pill">20 DAYS · COAST TO COAST</span>
+            <span class="pill">HAGIT SHITRIT · 60</span>
+          </div>
+          <div class="countdown sexy-countdown" id="countdown"></div>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#route">EXPLORE THE JOURNEY ↓</a>
+            <a class="btn btn-secondary" href="#packing">🧳 צ׳ק־ליסט</a>
+            <button class="btn btn-secondary" onclick="party()">✦ CELEBRATE 60</button>
+          </div>
+        </div>
+
+        <div class="plane-scene" aria-hidden="true">
+          <div class="plane-halo"></div>
+          <div class="route-caption"><span>LAX</span><b>•••••• ✈︎ ••••••</b><span>NYC</span></div>
+          <svg class="jet-svg" viewBox="0 0 760 560" role="img" aria-label="Stylized airplane on a purple runway">
+            <defs>
+              <linearGradient id="runwayGlow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9b8ff" stop-opacity=".06"/><stop offset=".55" stop-color="#a84dff" stop-opacity=".32"/><stop offset="1" stop-color="#ff4faf" stop-opacity=".02"/></linearGradient>
+              <linearGradient id="jetMetal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f9efff"/><stop offset=".28" stop-color="#bc82ff"/><stop offset=".58" stop-color="#5a1b9c"/><stop offset="1" stop-color="#160d2f"/></linearGradient>
+              <linearGradient id="wingMetal" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#291045"/><stop offset=".45" stop-color="#a948da"/><stop offset=".5" stop-color="#f4c8ff"/><stop offset=".55" stop-color="#a948da"/><stop offset="1" stop-color="#291045"/></linearGradient>
+              <radialGradient id="engineGlow"><stop offset="0" stop-color="#f7d7ff"/><stop offset=".18" stop-color="#f754c2"/><stop offset=".6" stop-color="#59217c"/><stop offset="1" stop-color="#080510"/></radialGradient>
+              <filter id="pinkGlow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="18"/></filter>
+            </defs>
+            <ellipse cx="380" cy="505" rx="250" ry="28" fill="#ff45b5" opacity=".22" filter="url(#softGlow)"/>
+            <path d="M112 548 L296 292 L464 292 L648 548 Z" fill="url(#runwayGlow)" opacity=".74"/>
+            <path d="M196 548 L325 292" stroke="#c77cff" stroke-opacity=".46" stroke-width="2"/>
+            <path d="M564 548 L435 292" stroke="#ff63bd" stroke-opacity=".42" stroke-width="2"/>
+            <path d="M380 548 L380 314" stroke="#f7dcff" stroke-opacity=".55" stroke-width="3" stroke-dasharray="18 23"/>
+            <g opacity=".34">
+              <circle cx="238" cy="505" r="3" fill="#fff"/><circle cx="522" cy="505" r="3" fill="#fff"/><circle cx="270" cy="451" r="3" fill="#fff"/><circle cx="490" cy="451" r="3" fill="#fff"/><circle cx="302" cy="395" r="2.5" fill="#fff"/><circle cx="458" cy="395" r="2.5" fill="#fff"/>
+            </g>
+            <g class="plane-group" filter="url(#pinkGlow)">
+              <path d="M132 323 L337 267 L350 207 L410 207 L423 267 L628 323 L621 348 L421 314 L407 455 L353 455 L339 314 L139 348 Z" fill="url(#wingMetal)" opacity=".96"/>
+              <path d="M344 130 Q380 88 416 130 L407 420 Q403 466 380 486 Q357 466 353 420 Z" fill="url(#jetMetal)"/>
+              <path d="M352 190 L285 258 L349 238 Z" fill="#6d2996"/><path d="M408 190 L475 258 L411 238 Z" fill="#6d2996"/>
+              <path d="M367 118 L380 46 L393 118 Z" fill="#a451d4" opacity=".9"/>
+              <ellipse cx="302" cy="322" rx="38" ry="42" fill="#090611" stroke="#b250ee" stroke-width="6"/>
+              <ellipse cx="458" cy="322" rx="38" ry="42" fill="#090611" stroke="#b250ee" stroke-width="6"/>
+              <ellipse cx="302" cy="322" rx="22" ry="25" fill="url(#engineGlow)" opacity=".88"/>
+              <ellipse cx="458" cy="322" rx="22" ry="25" fill="url(#engineGlow)" opacity=".88"/>
+              <path d="M354 405 Q380 423 406 405" fill="none" stroke="#ff91da" stroke-width="3" opacity=".8"/>
+            </g>
+          </svg>
+          <div class="plane-label" dir="ltr"><span>17 AUG 2026</span><strong>TLV → LAX → USA → NYC</strong><span>05 SEP 2026</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-flightline" dir="ltr"><span>LOS ANGELES</span><i></i><b>COAST TO COAST · BIRTHDAY EDITION</b><i></i><span>NEW YORK</span></div>
+  </header>
+
+  <main>
+    <section class="wrap">
+      <div class="stats">
+        <div class="stat glass"><strong>20</strong><span>ימי אמריקה</span></div>
+        <div class="stat glass"><strong>16+</strong><span>יעדים ואתרי טבע</span></div>
+        <div class="stat glass"><strong>8°–42°</strong><span>טווח שכדאי להתכונן אליו</span></div>
+        <div class="stat glass"><strong>2</strong><span>חופים של ארה״ב</span></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <div class="eyebrow">THE ONE THING TO KNOW</div>
+        <h2 class="section-title">המזוודה צריכה להתמודד עם כמעט ארבע עונות</h2>
+        <p class="section-copy">במערב כבר יש תחזית ממשית: קריר בסן פרנסיסקו ובברייס, חם מאוד בלאס וגאס, ולילות קרירים בגרנד קניון. הפתרון הוא לא מזוודה ענקית — אלא שכבות חכמות.</p>
+        <div class="alert-grid">
+          <div class="temp-swing glass">
+            <div class="eyebrow">TEMPERATURE WHIPLASH</div>
+            <div class="temp-scale">
+              <div class="temp-end"><b>8°C</b><small>ברייס בלילה</small></div>
+              <div class="scale"></div>
+              <div class="temp-end"><b>42°C</b><small>לאס וגאס ביום</small></div>
+            </div>
+            <p class="muted" style="margin:14px 0 0">המסקנה: חולצות קיץ + עליונית/פליז קל + מעיל גשם דק + נעלי הליכה טובות. לא צריך מעיל חורף כבד.</p>
+          </div>
+          <div class="warning glass">
+            <h3>🧥 איפה באמת עלול להיות קר?</h3>
+            <ul>
+              <li><b>סן פרנסיסקו:</b> רוח, ערפל ו־14–19°C.</li>
+              <li><b>ברייס קניון:</b> גבוה בהרים; סביב 8°C בלילה.</li>
+              <li><b>גרנד קניון:</b> בוקר/ערב יכולים להיות סביב 9°C.</li>
+              <li><b>ניאגרה / ניו יורק:</b> לקראת ספטמבר ייתכנו ערבים קרירים וגשם.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="route">
+      <div class="wrap">
+        <div class="eyebrow">COAST TO COAST</div>
+        <h2 class="section-title">המפה של חגית</h2>
+        <p class="section-copy">הקו עוקב אחרי המסלול הרשמי: דרום קליפורניה → החוף הפסיפי → יוסמיטי → נבאדה ויוטה → גרנד קניון → טיסה פנימית לפניקס–וושינגטון → פנסילבניה → ניאגרה → ניו יורק.</p>
+        <div class="map-shell glass">
+          <div class="map-top"><span class="pill">📍 לחצי על כל מספר לפרטים</span><span class="muted" style="font-size:13px">מפה: OpenStreetMap · מסלול סכמטי</span></div>
+          <div id="map"></div>
+          <div class="map-fallback" id="mapFallback"><div><div style="font-size:42px">🗺️</div><b>המפה צריכה חיבור לאינטרנט</b><p class="muted">המסלול המלא עדיין מופיע ממש מתחת.</p></div></div>
+        </div>
+
+        <div style="height:26px"></div>
+        <div class="eyebrow">20 DAYS · 20 LITTLE WORLDS</div>
+        <h2 class="section-title" style="font-size:clamp(28px,4vw,44px)">כל יום הוא עולם ומלואו ✨</h2>
+        <p class="section-copy">פתחו כל יום וקבלו את כל מה שחגית צריכה באותו רגע: מה קורה, מזג אוויר טיפוסי, איפה ישנים, לפחות 5 רעיונות לאוכל, שתי הברקות לזמן חופשי, עובדה מעניינת, משימת צילום ושיר לאווירה.</p>
+        <div class="trip-now" id="tripNow"></div>
+        <div class="day-world-toolbar">
+          <button class="btn btn-primary" onclick="openAllDays()">✨ לפתוח את כל הימים</button>
+          <button class="btn btn-secondary" onclick="closeAllDays()">↕️ לסגור הכול</button>
+          <button class="btn btn-secondary" onclick="jumpToCurrentDay()">📍 לקפוץ ליום הנוכחי</button>
+        </div>
+        <div class="day-jump" id="dayJump"></div>
+        <div class="day-worlds" id="timeline"></div>
+        <div class="day-research-note">🍽️ המלצות האוכל נבחרו ממדריכי תיירות, אתרי יעדים ומדריכי אוכל מעודכנים ל־2026. מסעדות ושעות פתיחה משתנות — לפני יציאה עצמאית כדאי ללחוץ Maps ולוודא שהמקום פתוח ושיש מקום. המלונות הם לפי הרשימה שמפורסמת למסלול או מלון דומה.</div>
+      </div>
+    </section>
+
+    <section class="section" id="weather">
+      <div class="wrap">
+        <div class="eyebrow">LIVE WEATHER BOARD</div>
+        <h2 class="section-title">מזג האוויר במסלול — חי</h2>
+        <p class="section-copy">כל כרטיס מושך טמפרטורה עדכנית מהאינטרנט. אם תאריך הביקור כבר נמצא בטווח התחזית, יוצגו גם המקסימום והמינימום הצפויים לאותו יום; אחרת מופיע טווח עונתי שימושי והתחזית תתעדכן אוטומטית כשהתאריך יתקרב.</p>
+        <div class="weather-grid" id="weatherGrid"></div>
+      </div>
+    </section>
+
+    <section class="section" id="packing">
+      <div class="wrap">
+        <div class="eyebrow">THE SUITCASE</div>
+        <h2 class="section-title">מה באמת לקחת ל־20 יום?</h2>
+        <p class="section-copy">המסלול מחליף מלון כמעט כל לילה, אז עדיף לא לבנות על כביסה כל יומיים. ההמלצה: לארוז בערך ל־10–12 ימים ולעשות כביסה אחת במהלך שלושת הלילות בלאס וגאס או בהמשך כשנוח.</p>
+        <div class="packing-layout">
+          <aside class="packing-guide glass">
+            <h3>🧳 נוסחת חגית</h3>
+            <div class="big-number">10–12</div>
+            <div class="muted">ימים של בגדים, לא 20.</div>
+            <ul>
+              <li><b>8–10</b> חולצות קצרות / קלילות</li>
+              <li><b>4–5</b> מכנסיים / חצאיות נוחים</li>
+              <li><b>10–12</b> פריטי הלבשה תחתונה</li>
+              <li><b>8–10</b> זוגות גרביים</li>
+              <li><b>1</b> פליז/סווטשירט קל וטוב</li>
+              <li><b>1</b> קרדיגן/עליונית דקה</li>
+              <li><b>1</b> מעיל גשם מתקפל</li>
+              <li><b>1</b> סט יפה ליום הולדת / ערב</li>
+              <li><b>2</b> זוגות נעליים מקסימום — אחד מהם נעלי הליכה רציניות</li>
+            </ul>
+            <div class="climate"><b>טיפ:</b> תשאירו 20–25% מהמזוודה ריק. אמריקה + אאוטלטים + ג׳רזי גארדן = המזוודה חוזרת עם חיים חדשים.</div>
+            <button class="btn btn-secondary" style="width:100%;margin-top:14px" onclick="window.print()">🖨️ להדפיס / לשמור PDF</button>
+          </aside>
+
+          <div class="check-shell glass">
+            <div class="progress-row"><b id="progressText">0% ארוז</b><div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div></div>
+            <div id="checklist"></div>
+            <div class="add-row"><input id="newItem" placeholder="להוסיף משהו משלכם…" /><button class="btn btn-primary" onclick="addCustomItem()">＋ הוספה</button></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn btn-secondary" onclick="copyChecklist()">📋 העתק רשימה</button><button class="btn btn-secondary" onclick="resetChecklist()">↺ איפוס סימונים</button></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="flight">
+      <div class="wrap">
+        <div class="eyebrow">LONG-HAUL SURVIVAL</div>
+        <h2 class="section-title">תיק היד לטיסה ללוס אנג׳לס</h2>
+        <div class="flight-card">
+          <div class="flight-panel glass">
+            <h3>✈️ מה שיהיה איתה במושב</h3>
+            <ul>
+              <li>דרכון + אישור ESTA + ביטוח נסיעות + מסמכי הטיול</li>
+              <li>טלפון, כבל טעינה ואוזניות</li>
+              <li>תרופות קבועות וכל תרופה חשובה — לא במזוודה שנשלחת</li>
+              <li>חולצה ותחתונים להחלפה, מברשת שיניים קטנה</li>
+              <li>עליונית דקה — במטוס יכול להיות קר</li>
+              <li>בקבוק מים ריק למילוי אחרי הבידוק + חטיף</li>
+              <li>עט קטן — תמיד איכשהו צריך עט דווקא כשאין</li>
+            </ul>
+          </div>
+          <div class="flight-panel glass">
+            <h3>🔋 Power Bank 5,000mAh</h3>
+            <ul>
+              <li><b>כן, מותר להעלות.</b> באל־על מותר Power Bank אחד עד 100Wh.</li>
+              <li>חייב להיות <b>בתיק היד</b>, לא במזוודה שנשלחת.</li>
+              <li>סימון ה־Wh צריך להיות ברור על המכשיר.</li>
+              <li>לפי כללי אל־על המעודכנים, <b>אסור להשתמש בו או לטעון אותו במהלך הטיסה</b>.</li>
+              <li>עדיף להטעין את הטלפון משקע/USB במטוס ולשמור את הסוללה לשדה ולנחיתה.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="hotels">
+      <div class="wrap">
+        <div class="eyebrow">HOTELS & LOGISTICS</div>
+        <h2 class="section-title">המלונות של חגית 🏨</h2>
+        <p class="section-copy">כל תחנות הלינה שמפורסמות למסלול UST. המלון הסופי עשוי להיות אחד מהשמות שמופיעים כאן או מלון דומה ברמה ובאזור — לכן שומרים את הסקשן הזה כמדריך, ומעדכנים ברגע שמתקבלת רשימת המלונות הסופית מהקבוצה.</p>
+        <div class="section-note"><b>טיפ למשפחה:</b> כפתור Maps פותח חיפוש של המלון/האזור. אם רימון תחליף מלון, נוכל לעדכן את הכרטיס תוך דקה בלי לשנות את כתובת האתר.</div>
+        <div class="hotel-grid-pro">
+          <article class="hotel-pro glass"><div class="nights">3 לילות · 17–20.08</div><h3>לוס אנג׳לס / אנהיים</h3><div class="hotel-name">LULU Hotel / JW Marriott Anaheim Resort — או דומה</div><div class="area">בסיס לימים הראשונים, כולל אזור לוס אנג׳לס ויוניברסל.</div><div class="card-actions"><a class="mini-btn" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=LULU+Hotel+Anaheim">📍 Maps</a><a class="mini-btn" target="_blank" rel="noopener" href="https://www.marriott.com/">🌐 Marriott</a></div></article>
+          <article class="hotel-pro glass"><div class="nights">לילה 1 · 20.08</div><h3>סנטה מריה</h3><div class="hotel-name">Hampton Inn — או דומה</div><div class="area">עצירת לילה בדרך צפונה על החוף הקליפורני.</div><div class="card-actions"><a class="mini-btn" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=Hampton+Inn+Santa+Maria+California">📍 Maps</a><a class="mini-btn" target="_blank" rel="noopener" href="https://www.hilton.com/en/brands/hampton-by-hilton/">🌐 Hampton</a></div></article>
+          <article class="hotel-pro glass"><div class="nights">2 לילות · 21–23.08</div><h3>סן פרנסיסקו / Emeryville</h3><div class="hotel-name">Hilton Garden Inn Emeryville — או דומה</div><div class="area">מיקום נוח מול המפרץ ובקרבת הכניסה לסן פרנסיסקו.</div><div class="card-actions"><a class="mini-btn" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=Hilton+Garden+Inn+San+Francisco+Oakland+Bay+Bridge">📍 Maps</a><a class="mini-btn" target="_blank" rel="noopener" href="https://www.hilton.com/en/brands/hilton-garden-inn/">🌐 Hilton</a></div></article>
+          <article class="hotel-pro glass"><div class="nights">לילה 1 · 23.08</div><h3>טולרה / אזור יוסמיטי</h3><div class="hotel-name">Sonesta / מלון דומה באזור</div><div class="area">לינת מעבר אחרי יום טבע ארוך ביוסמיטי.</div><div class="card-actions"><a class="mini-btn" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=Sonesta+Tulare+California">📍 Maps</a><a class="mini-btn" target="_blank" rel="noopener" href="https://www.sonesta.com/">🌐 Sonesta</a></div></article>
+          <article class="hotel-pro glass"><div class="nights">3 לילות · 24–27.08</div><h3>לאס וגאס</h3><div class="hotel-name">Luxor / Excalibur — או דומה</div><div class="area">שלושה לילות רצופים — נקודה מעולה לכביסה, מנוחה וקצת קניות.</div><div class="card-actions"><a class="mini-btn" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=Luxor+Hotel+Las+Vegas">📍 Luxor</a><a class="mini-btn" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=Excalibur+Hotel+Las+Vegas">📍 Excalibur</a><a class="mini-btn" target="_blank" rel="noopener" href="https://www.mgmresorts.com/">🌐 MGM</a></div></article>
+          <article class="hotel-pro glass"><div class="nights">לילה 1 · 27.08</div><h3>קנאב, יוטה</h3><div class="hotel-name">La Quinta by Wyndham — או דומה</div><div class="area">לינה נוחה בין ציון/ברייס לגרנד קניון.</div><div class="card-actions"><a class="mini-btn" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=La+Quinta+Kanab+Utah">📍 Maps</a><a class="mini-btn" target="_blank" rel="noopener" href="https://www.wyndhamhotels.com/laquinta">🌐 La Quinta</a></div></article>
+          <article class="hotel-pro glass"><div class="nights">לילה 1 · 28.08</div><h3>וויליאמס / פלגסטף</h3><div class="hotel-name">Fairfield Inn / Days Hotel — או דומה</div><div class="area">אזור שער לגרנד קניון ונתיב Route 66.</div><div class="card-actions"><a class="mini-btn" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=Fairfield+Inn+Williams+Arizona">📍 Maps</a><a class="mini-btn" target="_blank" rel="noopener" href="https://www.marriott.com/fairfield-inn/travel.mi">🌐 Fairfield</a></div></article>
+          <article class="hotel-pro glass"><div class="nights">2 לילות · 29–31.08</div><h3>וושינגטון DC / Falls Church</h3><div class="hotel-name">Home2 Suites by Hilton — או דומה</div><div class="area">בסיס לשני ימי הבירה אחרי טיסת הפנים מפניקס.</div><div class="card-actions"><a class="mini-btn" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=Home2+Suites+Falls+Church+Virginia">📍 Maps</a><a class="mini-btn" target="_blank" rel="noopener" href="https://www.hilton.com/en/brands/home2-suites/">🌐 Home2</a></div></article>
+          <article class="hotel-pro glass"><div class="nights">לילה 1 · 31.08</div><h3>פנסילבניה / חבל האמיש</h3><div class="hotel-name">Holiday Inn & Suites — או דומה</div><div class="area">לינה אחרי אזור האמיש והרשי.</div><div class="card-actions"><a class="mini-btn" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=Holiday+Inn+Lancaster+Pennsylvania">📍 Maps</a><a class="mini-btn" target="_blank" rel="noopener" href="https://www.ihg.com/holidayinn/hotels/us/en/reservation">🌐 Holiday Inn</a></div></article>
+          <article class="hotel-pro glass"><div class="nights">לילה 1 · 01.09</div><h3>מפלי הניאגרה</h3><div class="hotel-name">Courtyard / Fairfield Inn — או דומה</div><div class="area">הלילה שבו הכי שווה לצאת לראות את המפלים גם אחרי החשכה.</div><div class="card-actions"><a class="mini-btn" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=Courtyard+Niagara+Falls+New+York">📍 Maps</a><a class="mini-btn" target="_blank" rel="noopener" href="https://www.marriott.com/courtyard/travel.mi">🌐 Courtyard</a></div></article>
+          <article class="hotel-pro glass"><div class="nights">לילה 1 · 02.09</div><h3>סקרנטון</h3><div class="hotel-name">Fairfield Inn — או דומה</div><div class="area">תחנת מעבר בדרך לניו יורק.</div><div class="card-actions"><a class="mini-btn" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=Fairfield+Inn+Scranton+Pennsylvania">📍 Maps</a><a class="mini-btn" target="_blank" rel="noopener" href="https://www.marriott.com/fairfield-inn/travel.mi">🌐 Fairfield</a></div></article>
+          <article class="hotel-pro glass"><div class="nights">2 לילות · 03–05.09</div><h3>ניו יורק 🗽</h3><div class="hotel-name">Hyatt Grand Central / Millennium Broadway — או דומה</div><div class="area">סיום הטיול בלב מנהטן. מושלם להסתובבות רגלית בערב.</div><div class="card-actions"><a class="mini-btn" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=Hyatt+Grand+Central+New+York">📍 Hyatt</a><a class="mini-btn" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=Millennium+Broadway+Times+Square">📍 Millennium</a><a class="mini-btn" target="_blank" rel="noopener" href="https://www.hyatt.com/">🌐 Hyatt</a></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="attractions">
+      <div class="wrap">
+        <div class="eyebrow">THE BIG STUFF</div>
+        <h2 class="section-title">האטרקציות של הטיול 🎡</h2>
+        <p class="section-copy">בחרתי את נקודות השיא שהכי שווה שיהיו לחגית מול העיניים — עם קישור לאתר הרשמי ומפה. התמונות נטענות מהאינטרנט, כך שבמצב אופליין הכרטיסים עדיין עובדים אבל בלי צילום.</p>
+        <div class="feature-grid">
+          <article class="feature-card"><div class="feature-img" style="background-image:url('https://images.unsplash.com/photo-1534190760961-74e8c1c5c3da?auto=format&fit=crop&w=900&q=80')"></div><div class="feature-body"><h3>לוס אנג׳לס + יוניברסל</h3><p>הפתיחה ההוליוודית של המסע: אולפנים, סרטים ואווירת LA.</p><div class="card-actions"><a class="mini-btn" href="https://www.universalstudioshollywood.com/" target="_blank" rel="noopener">🌐 אתר רשמי</a><a class="mini-btn" href="https://www.google.com/maps/search/?api=1&query=Universal+Studios+Hollywood" target="_blank" rel="noopener">📍 מפה</a></div></div></article>
+          <article class="feature-card"><div class="feature-img" style="background-image:url('https://images.unsplash.com/photo-1501594907352-04cda38ebc29?auto=format&fit=crop&w=900&q=80')"></div><div class="feature-body"><h3>סן פרנסיסקו</h3><p>Golden Gate, המפרץ והעיר הכי קרירה במסלול.</p><div class="card-actions"><a class="mini-btn" href="https://www.sftravel.com/" target="_blank" rel="noopener">🌐 SF Travel</a><a class="mini-btn" href="https://www.google.com/maps/search/?api=1&query=Golden+Gate+Bridge" target="_blank" rel="noopener">📍 Golden Gate</a></div></div></article>
+          <article class="feature-card"><div class="feature-img" style="background-image:url('https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80')"></div><div class="feature-body"><h3>יוסמיטי</h3><p>יום טבע ענק בין קירות גרניט, מפלים ועמק יוסמיטי.</p><div class="card-actions"><a class="mini-btn" href="https://www.nps.gov/yose/" target="_blank" rel="noopener">🌐 NPS</a><a class="mini-btn" href="https://www.google.com/maps/search/?api=1&query=Yosemite+Valley" target="_blank" rel="noopener">📍 מפה</a></div></div></article>
+          <article class="feature-card"><div class="feature-img" style="background-image:url('https://images.unsplash.com/photo-1605833556294-ea5c7a74f57d?auto=format&fit=crop&w=900&q=80')"></div><div class="feature-body"><h3>לאס וגאס</h3><p>שלושה לילות של אורות, שופינג, מלונות ענק וחום מדברי.</p><div class="card-actions"><a class="mini-btn" href="https://www.visitlasvegas.com/" target="_blank" rel="noopener">🌐 Visit Las Vegas</a><a class="mini-btn" href="https://www.google.com/maps/search/?api=1&query=Las+Vegas+Strip" target="_blank" rel="noopener">📍 The Strip</a></div></div></article>
+          <article class="feature-card"><div class="feature-img" style="background-image:url('https://images.unsplash.com/photo-1474044159687-1ee9f3a51722?auto=format&fit=crop&w=900&q=80')"></div><div class="feature-body"><h3>ציון + ברייס + גרנד קניון</h3><p>שלושת ימי ה־WOW של הפארקים. שכבות, מים ונעלי הליכה — חובה.</p><div class="card-actions"><a class="mini-btn" href="https://www.nps.gov/zion/" target="_blank" rel="noopener">🌐 Zion</a><a class="mini-btn" href="https://www.nps.gov/brca/" target="_blank" rel="noopener">🌐 Bryce</a><a class="mini-btn" href="https://www.nps.gov/grca/" target="_blank" rel="noopener">🌐 Grand Canyon</a></div></div></article>
+          <article class="feature-card"><div class="feature-img" style="background-image:url('https://images.unsplash.com/photo-1522083165195-3424ed129620?auto=format&fit=crop&w=900&q=80')"></div><div class="feature-body"><h3>וושינגטון DC</h3><p>אנדרטאות, מוסדות השלטון והעיר הכי ״אמריקה״ במובן ההיסטורי.</p><div class="card-actions"><a class="mini-btn" href="https://washington.org/" target="_blank" rel="noopener">🌐 Washington.org</a><a class="mini-btn" href="https://www.google.com/maps/search/?api=1&query=National+Mall+Washington+DC" target="_blank" rel="noopener">📍 National Mall</a></div></div></article>
+          <article class="feature-card"><div class="feature-img" style="background-image:url('https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=900&q=80')"></div><div class="feature-body"><h3>מפלי הניאגרה</h3><p>מים, רסס ואחת העצירות הכי פוטוגניות בטיול.</p><div class="card-actions"><a class="mini-btn" href="https://www.niagarafallsusa.com/" target="_blank" rel="noopener">🌐 Niagara USA</a><a class="mini-btn" href="https://www.google.com/maps/search/?api=1&query=Niagara+Falls+New+York" target="_blank" rel="noopener">📍 מפה</a></div></div></article>
+          <article class="feature-card"><div class="feature-img" style="background-image:url('https://images.unsplash.com/photo-1485871981521-5b1fd3805eee?auto=format&fit=crop&w=900&q=80')"></div><div class="feature-body"><h3>ניו יורק 🗽</h3><p>הפינאלה: מנהטן, טיימס סקוור, קניות ואורות עד הרגע האחרון.</p><div class="card-actions"><a class="mini-btn" href="https://www.nyctourism.com/" target="_blank" rel="noopener">🌐 NYC Tourism</a><a class="mini-btn" href="https://www.google.com/maps/search/?api=1&query=Times+Square+New+York" target="_blank" rel="noopener">📍 Times Square</a></div></div></article>
+          <article class="feature-card"><div class="feature-img" style="background-image:url('https://images.unsplash.com/photo-1555529771-35a38f16c4e6?auto=format&fit=crop&w=900&q=80')"></div><div class="feature-body"><h3>קניות: Jersey Gardens</h3><p>לא לסיים את הטיול עם מזוודה מלאה מראש. זה המקום לנצל את מה שהשארנו ריק.</p><div class="card-actions"><a class="mini-btn" href="https://www.simon.com/mall/the-mills-at-jersey-gardens" target="_blank" rel="noopener">🌐 אתר הקניון</a><a class="mini-btn" href="https://www.google.com/maps/search/?api=1&query=The+Mills+at+Jersey+Gardens" target="_blank" rel="noopener">📍 מפה</a></div></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="watch">
+      <div class="wrap">
+        <div class="eyebrow">WATCH BEFORE YOU GO</div>
+        <h2 class="section-title">להיכנס לאווירה 🎬</h2>
+        <p class="section-copy">קיצורי דרך ל־YouTube לפני הטיול — לפתוח בטלוויזיה בערב ולעשות טעימה מהתחנות שמחכות.</p>
+        <div class="watch-grid">
+          <div class="watch-card glass"><div class="watch-icon">🎥</div><h3>California Road Trip</h3><p>LA, החוף, סן פרנסיסקו ויוסמיטי.</p><a class="mini-btn" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=California+coast+road+trip+Los+Angeles+San+Francisco+Yosemite+4K">▶️ לפתוח ב־YouTube</a></div>
+          <div class="watch-card glass"><div class="watch-icon">🏜️</div><h3>Utah & Grand Canyon</h3><p>ציון, ברייס והגרנד קניון ב־4K.</p><a class="mini-btn" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=Zion+Bryce+Grand+Canyon+4K+travel">▶️ לפתוח ב־YouTube</a></div>
+          <div class="watch-card glass"><div class="watch-icon">🎰</div><h3>Las Vegas Strip</h3><p>סיור ערב בסטריפ לפני שמגיעים.</p><a class="mini-btn" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=Las+Vegas+Strip+night+walk+4K">▶️ לפתוח ב־YouTube</a></div>
+          <div class="watch-card glass"><div class="watch-icon">🏛️</div><h3>Washington DC</h3><p>National Mall והאתרים המרכזיים.</p><a class="mini-btn" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=Washington+DC+National+Mall+walking+tour+4K">▶️ לפתוח ב־YouTube</a></div>
+          <div class="watch-card glass"><div class="watch-icon">💦</div><h3>Niagara Falls</h3><p>כדי להבין מראש כמה המפלים באמת עצומים.</p><a class="mini-btn" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=Niagara+Falls+4K+tour">▶️ לפתוח ב־YouTube</a></div>
+          <div class="watch-card glass"><div class="watch-icon">🗽</div><h3>New York City</h3><p>מנהטן בלילה — פינאלה ראוי לחגיגת 60.</p><a class="mini-btn" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=New+York+City+night+walk+4K+Times+Square">▶️ לפתוח ב־YouTube</a></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <div class="eyebrow">HAGIT'S RULES OF AMERICA</div>
+        <h2 class="section-title">10 טיפים שיחסכו עצבים</h2>
+        <div class="tips-grid">
+          <div class="tip glass"><div class="icon">👟</div><h3>נעליים לפני סטייל</h3><p>יוניברסל, סן פרנסיסקו, יוסמיטי, פארקים וניו יורק = המון צעדים. זוג שכבר ננעל ונוח, לא זוג חדש מהקופסה.</p></div>
+          <div class="tip glass"><div class="icon">🧅</div><h3>שיטת הבצל</h3><p>טי־שירט + עליונית + שכבה חמה מתקפלת. ככה עוברים מ־42° בוגאס ל־8° בברייס בלי לסחוב ארון.</p></div>
+          <div class="tip glass"><div class="icon">☀️</div><h3>שמש אמריקאית</h3><p>כובע, משקפי שמש, קרם הגנה ובקבוק מים — במיוחד בלאס וגאס, ציון והגרנד קניון.</p></div>
+          <div class="tip glass"><div class="icon">💳</div><h3>שני אמצעי תשלום</h3><p>כרטיס עיקרי + כרטיס גיבוי במקום נפרד. מעט מזומן קטן לטיפים/דברים קטנים, לא ארנק מפוצץ.</p></div>
+          <div class="tip glass"><div class="icon">📱</div><h3>צילום מסמכים</h3><p>לשמור בנייד ובענן צילום של דרכון, ביטוח, ESTA וכרטיסי טיסה. לא במקום המקור — כגיבוי.</p></div>
+          <div class="tip glass"><div class="icon">🧳</div><h3>AirTag / תג מזוודה</h3><p>אם יש — זה טיול קלאסי לתג איתור: טיסה ארוכה + טיסת פנים + הרבה מעברי מלון.</p></div>
+          <div class="tip glass"><div class="icon">🛍️</div><h3>לא למלא את המזוודה</h3><p>יש קניות בלאס וגאס ובסוף ג׳רזי גארדן. תשאירי נפח ומשקל מראש.</p></div>
+          <div class="tip glass"><div class="icon">🌧️</div><h3>מעיל גשם דק</h3><p>שימושי במיוחד בסן פרנסיסקו, ניאגרה וגם אם נופל גשם קצר במזרח. מתקפל לכמעט כלום.</p></div>
+          <div class="tip glass"><div class="icon">🚌</div><h3>תיק יום קטן</h3><p>מים, שכבה חמה, מטען, מסמכים, תרופות וכובע. המזוודה הגדולה נשארת בבטן האוטובוס/מלון.</p></div>
+          <div class="tip glass"><div class="icon">🥂</div><h3>והכי חשוב</h3><p>לא לרדוף אחרי כל וי ברשימה. זו חגיגת 60 באמריקה — לפעמים הקפה מול הנוף הוא האירוע.</p></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <div><b>HAPPY BIRTHDAY, HAGIT — THE AMERICAN JOURNEY · 20 DAYS / 20 WORLDS</b></div>
+      <div style="margin-top:5px">נבנה במיוחד לחגית שטרית · אוגוסט–ספטמבר 2026 🇺🇸✨</div>
+      <div class="footer-links">
+        <a href="https://esta.cbp.dhs.gov/" target="_blank" rel="noopener">ESTA הרשמי</a>
+        <a href="https://rimon-tours.co.il/" target="_blank" rel="noopener">רימון טיולים</a>
+        <a href="https://www.elal.com/eng/baggage/dangerous-material" target="_blank" rel="noopener">כללי סוללות אל־על</a>
+      </div>
+      <div style="margin-top:12px">מזג האוויר החי באתר מבוסס Open‑Meteo. תחזיות משתנות — לבדוק שוב 24–48 שעות לפני כל יעד.</div>
+    </div>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const tripStart = new Date('2026-08-17T00:00:00-07:00');
+
+    const days = [
+      {d:1,date:'17.08',title:'תל אביב → לוס אנג׳לס',desc:'טיסה ישירה, הוליווד, תיאטרון דולבי, בוורלי הילס ושוק האיכרים.',tags:['אל־על','לוס אנג׳לס']},
+      {d:2,date:'18.08',title:'סאן דייגו',desc:'לה הויה, המרינה, פסל הנשיקה, האי קורונאדו והעיר העתיקה.',tags:['חוף','הליכה']},
+      {d:3,date:'19.08',title:'יוניברסל סטודיוז + סנטה מוניקה',desc:'יום פארק ואולפנים, אחריו טיילת ומזח סנטה מוניקה.',tags:['פארק','שמש']},
+      {d:4,date:'20.08',title:'סנטה ברברה + סולוונג',desc:'צפון קליפורניה, אדריכלות ספרדית ועיירה דנית ציורית.',tags:['נסיעה','קליפורניה']},
+      {d:5,date:'21.08',title:'מונטריי + דרך 17 המייל + סן פרנסיסקו',desc:'חוף פסיפי, מצוקים, מונטריי והגעה לסן פרנסיסקו בערב.',tags:['רוח','עליונית']},
+      {d:6,date:'22.08',title:'סן פרנסיסקו + סוסליטו',desc:'גולדן גייט, פישרמנס וורף, אלקטרז מבחוץ, לומבארד, Twin Peaks וצ׳יינה טאון.',tags:['קריר','הרבה הליכה']},
+      {d:7,date:'23.08',title:'יוסמיטי פארק',desc:'אל קפיטן, מפלים, נופי סיירה נבדה ועצי סקוויה.',tags:['טבע','נעלי הליכה']},
+      {d:8,date:'24.08',title:'לאס וגאס',desc:'נסיעה דרך קליפורניה והגעה לעיר האורות. אפשרות לסיור לילה.',tags:['חם מאוד','ערב']},
+      {d:9,date:'25.08',title:'סכר הובר + לאס וגאס',desc:'תצפיות על סכר הובר ואגם מיד, חזרה לקניות וזמן בעיר.',tags:['42° אפשרי','קניות']},
+      {d:10,date:'26.08',title:'לאס וגאס — יום חופשי + מופע',desc:'יום עצמאי בין המלונות והקניות, בערב מופע בידור כלול.',tags:['יום חופשי','מופע']},
+      {d:11,date:'27.08',title:'ציון פארק + ברייס קניון',desc:'יום של טבע ביוטה: צוקים אדומים, צריחי סלע וגבהים שבהם הערב יכול להיות ממש קריר.',tags:['8° בלילה','שכבות']},
+      {d:12,date:'28.08',title:'סכר גלן + Horseshoe Bend + גרנד קניון',desc:'אגם פאואל, עיקול פרסת הסוס ותצפיות על הגרנד קניון.',tags:['בוקר קריר','שמש חזקה']},
+      {d:13,date:'29.08',title:'פניקס → וושינגטון',desc:'פרידה מהמערב וטיסת פנים מפניקס לוושינגטון. הגעה בשעות הערב.',tags:['טיסת פנים','מזוודה בתשלום']},
+      {d:14,date:'30.08',title:'וושינגטון די.סי.',desc:'הקפיטול, הבית הלבן, אנדרטאות וושינגטון, ג׳פרסון, וייטנאם, רוזוולט ומלחמת העולם השנייה.',tags:['הליכה','לחות']},
+      {d:15,date:'31.08',title:'חבל האמיש + הרשי',desc:'אורח החיים של האמיש ועולם השוקולד של הרשי. לינה בפנסילבניה.',tags:['פנסילבניה','שוקולד']},
+      {d:16,date:'01.09',title:'ווטקינס גלן + מפלי הניאגרה',desc:'מסלול טבע בין מפלים וקניון, מעבר לצד הקנדי של ניאגרה ומפלים מוארים בערב.',tags:['מים','מעיל גשם']},
+      {d:17,date:'02.09',title:'שייט בניאגרה + Niagara-on-the-Lake',desc:'שייט אל המפלים עם מעיל גשם, עיירת ניאגרה און דה לייק והמשך לכיוון סקרנטון.',tags:['נרטבים','קריר ליד מים']},
+      {d:18,date:'03.09',title:'ניו יורק — היכרות ראשונה',desc:'רוקפלר, השדרה החמישית, סנט פטריק, סנטרל פארק, לינקולן סנטר והיכרות ערב רגלית.',tags:['ניו יורק','הליכה']},
+      {d:19,date:'04.09',title:'ניו יורק — מנהטן',desc:'אמפייר סטייט, גריניץ׳ וילג׳, צ׳לסי מרקט, היי ליין, סוהו, צ׳יינה טאון, וול סטריט וגראונד זירו.',tags:['יום עמוס','נעליים!']},
+      {d:20,date:'05.09',title:'ג׳רזי גארדן → טיסה לישראל',desc:'קניות אחרונות בג׳רזי גארדן ובהתאם לשעת הטיסה — לשדה ולדרך הביתה.',tags:['אאוטלט','טיסה חזרה']}
+    ];
+
+    const dayExtras = {"1":{"weather":"20–31°C · חם ונעים","pace":"נחיתה + יום ארוך","hotel":"LULU Hotel / JW Marriott Anaheim Resort — או דומה","hotelArea":"אנהיים","story":"נוחתים בלוס אנג׳לס ונכנסים ישר לסרט: הוליווד, בוורלי הילס ושוק האיכרים. זה יום של אדרנלין וג׳ט־לג, אז לא צריך להוכיח כלום בערב — אוכל טוב, מקלחת ושינה הם הישג.","tip":"בתיק היום: מים, משקפי שמש ועליונית למטוס/ערב. לא לבנות על אנרגיות עד חצות אחרי הטיסה.","fact":"השלט המפורסם HOLLYWOOD הוקם ב־1923 כפרסומת לנדל״ן ובמקור בכלל נכתב HOLLYWOODLAND.","challenge":"למצוא כוכב בשדרת הכוכבים שממש מרגש את חגית ולהצטלם איתו כאילו נפגשתן במקרה.","photo":"צילום ראשון של חגית באמריקה — עם כיתוב “60 starts NOW”.","song":"California Dreamin’ · The Mamas & The Papas","official":"https://www.discoverlosangeles.com/","map":"Hollywood Los Angeles","free":[["Griffith Observatory","אם נשאר כוח לפני הנסיעה לאנהיים — תצפית קלאסית על העיר והשלט."],["Downtown Disney District","אופציה קלה לערב ליד המלון: הליכה, חנויות ואווירה בלי להיכנס לפארק."]],"restaurants":[["The RANCH Restaurant & Saloon","Anaheim","ערב חגיגי, אמריקאי וסטייקים","חגיגי"],["Anaheim Packing House","Anaheim","פוד הול נוח כשכל אחד רוצה משהו אחר","קליל"],["Din Tai Fung Downtown Disney","Anaheim","כיסונים ואוכל אסייתי מדויק","פופולרי"],["Paseo","Downtown Disney","מקסיקני מודרני באווירה יפה","אווירה"],["Naples Ristorante e Bar","Downtown Disney","איטלקי נגיש ופיצה לערב עייף","נוח"]]},"2":{"weather":"19–27°C · חוף נעים","pace":"יום טיול מלא","hotel":"LULU Hotel / JW Marriott Anaheim Resort — או דומה","hotelArea":"אנהיים","story":"יום קליפורניה מושלם: קורונאדו, מרינה, Old Town ולה הויה. זה היום שבו מבינים כמה דרום קליפורניה רגועה, יפה ומאוד פוטוגנית.","tip":"קרם הגנה גם אם מעונן. ליד הים יכולה להיות רוח — עליונית דקה בתיק.","fact":"Hotel del Coronado נפתח ב־1888, והחזית האיקונית שלו כיכבה בסרט “Some Like It Hot”.","challenge":"להצטלם עם האוקיינוס מאחור ולבחור מי במשפחה היה שורד הכי טוב מעבר קבוע לקליפורניה.","photo":"כלבי הים/אריות הים בלה הויה — מרחוק ובלי להתקרב.","song":"Surfin’ U.S.A. · The Beach Boys","official":"https://www.sandiego.org/","map":"La Jolla Cove San Diego","free":[["Balboa Park","אם נוצרת שעה פנויה — גנים, ארכיטקטורה וטיילת יפה גם בלי להיכנס למוזיאון."],["Seaport Village","הליכה קלה על המים עם חנויות וקפה, קרוב למרינה."]],"restaurants":[["Puesto La Jolla","La Jolla","מקסיקני צבעוני ליד אזור החוף","מקסיקני"],["The Taco Stand","La Jolla","טאקו מהיר ואהוב, טוב להפסקת צהריים","מהיר"],["George’s at the Cove","La Jolla","נוף לים ואווירה של חופשה","נוף"],["Little Frenchie","Coronado","ביסטרו צרפתי מקסים בקורונאדו","ביסטרו"],["La Corriente Cocina del Pacífico","Coronado","סגנון באחה ופירות ים","ים"]]},"3":{"weather":"20–30°C · שמשי","pace":"פארק + ערב חוף","hotel":"LULU Hotel / JW Marriott Anaheim Resort — או דומה","hotelArea":"אנהיים","story":"יוניברסל הוא יום של רעש, סרטים ופעלולים — ואז עוברים לאנטיתזה: השקיעה של סנטה מוניקה. אחד הימים הכי “אמריקה שראינו בקולנוע”.","tip":"נעלי הליכה. לקחת בקבוק מים; בפארק עומדים הרבה. בערב בחוף יכולה להיכנס רוח.","fact":"ה־Studio Tour של יוניברסל התחיל כבר ב־1964 — והוא היה הזרע שממנו צמח פארק השעשועים של היום.","challenge":"לבחור מתקנים בלי להתווכח 😅 ולסיים את היום עם תמונה על המזח מול האוקיינוס.","photo":"Pacific Park והגלגל הענק בזמן שקיעה.","song":"California Gurls · Katy Perry","official":"https://www.universalstudioshollywood.com/","map":"Santa Monica Pier","free":[["Palisades Park","טיילת ירוקה מעל החוף, מעולה לעשר דקות של שקט מול השקיעה."],["Third Street Promenade","שיטוט קצר של חנויות, מוזיקה ואנשים לפני שחוזרים לאנהיים."]],"restaurants":[["The Lobster","Santa Monica Pier","פירות ים ממש בכניסה למזח","נוף"],["Tar & Roses","Santa Monica","מנות לחלוקה ואווירה מקומית","מקומי"],["Élephante","Santa Monica","רופטופ ואווירת חופשה","אווירה"],["Bay Cities Italian Deli","Santa Monica","סנדוויצ׳ים איטלקיים אייקוניים","קליל"],["Uovo Santa Monica","Santa Monica","פסטה מהירה ומדויקת","איטלקי"]]},"4":{"weather":"18–27°C · נעים","pace":"נסיעה יפה צפונה","hotel":"Hampton Inn Santa Maria — או דומה","hotelArea":"Santa Maria","story":"יום שמחליף שתי אירופות בלי לצאת מקליפורניה: הספרדיות של סנטה ברברה והדנמרק הקטנה של סולוונג. פחות “אטרקציה ענקית”, יותר יום של אווירה.","tip":"נוח בשכבות דקות. זה יום מצוין לנעליים קלות יותר — אבל עדיין הולכים.","fact":"סולוונג נוסדה ב־1911 על ידי מתיישבים דנים שרצו להקים קהילה דנית בקליפורניה.","challenge":"לקנות/לטעום משהו דני אמיתי ולתת לו ציון חגית מ־1 עד 60.","photo":"טחנת רוח בסולוונג או חזית ספרדית בסנטה ברברה.","song":"Ventura Highway · America","official":"https://santabarbaraca.com/","map":"Solvang California","free":[["Santa Barbara County Courthouse","אם יש זמן בעיר — החצר והארכיטקטורה שוות עצירה קצרה."],["Mission Drive / Solvang windmills","הליכה עצמאית קצרה בין הטחנות, החנויות והמאפיות."]],"restaurants":[["La Super-Rica Taqueria","Santa Barbara","טאקו פשוט ומפורסם","מקומי"],["The Lark","Santa Barbara","קליפורני מודרני באזור Funk Zone","אווירה"],["Solvang Restaurant","Solvang","קלאסיקה מקומית ומאפים דניים","דני"],["Peasants FEAST","Solvang","אוכל עונתי ונעים במרכז","מקומי"],["Hitching Post II","Buellton","גריל בסגנון Central Coast","גריל"]]},"5":{"weather":"13–21°C · קריר ורוחני","pace":"חוף + הגעה לעיר","hotel":"Hilton Garden Inn Emeryville — או דומה","hotelArea":"Emeryville / Bay Area","story":"אחד מימי הדרך היפים: מונטריי, כרמל ו־17 Mile Drive. מהחופים הסלעיים והברושים עולים בערב למפרץ סן פרנסיסקו.","tip":"זה היום שבו העליונית יוצאת מהמזוודה באמת. הרוח בחוף יכולה להרגיש הרבה יותר קרה מהמספר.","fact":"מונטריי שימשה כבירת Alta California בתקופות הספרדית והמקסיקנית — הרבה לפני שקליפורניה הפכה למדינה אמריקאית.","challenge":"למצוא את הנוף הכי “גלויה” ב־17 Mile Drive ולעשות תמונה בלי פילטר.","photo":"Lone Cypress / קו החוף של כרמל.","song":"San Francisco · Scott McKenzie","official":"https://www.seemonterey.com/","map":"17 Mile Drive Monterey","free":[["Carmel Beach","אם הלו״ז מאפשר — עשר דקות יחפות על החול מול הפסיפי."],["Cannery Row","הליכה קצרה במונטריי בין הים, חנויות ובתי קפה."]],"restaurants":[["Passionfish","Pacific Grove","דגש על דגים ופירות ים מקומיים","ים"],["La Bicyclette","Carmel-by-the-Sea","ביסטרו אירופי קטן ונעים","ביסטרו"],["Stationæry","Carmel-by-the-Sea","בראנץ׳/קליפורני מודרני","מקומי"],["Old Fisherman’s Grotto","Monterey","קלאסיקה על הרציף","קלאסי"],["Monterey Fish House","Monterey","פירות ים באווירה לא מתאמצת","מקומי"]]},"6":{"weather":"14–20°C · קריר","pace":"עיר + הרבה הליכה","hotel":"Hilton Garden Inn Emeryville — או דומה","hotelArea":"Emeryville / Bay Area","story":"סן פרנסיסקו ביום אחד: Wharf, לומבארד, Twin Peaks, Chinatown, Golden Gate וסוסליטו. הקטע הוא לא להספיק — הקטע הוא להסתכל ימינה ושמאלה כי העיר עצמה היא האטרקציה.","tip":"עליונית טובה חובה, גם באוגוסט. נעליים עם אחיזה — הרחובות תלולים.","fact":"הצבע של גשר Golden Gate נקרא International Orange; הוא נשמר גם כי הוא בולט היטב בתוך הערפל המפורסם של המפרץ.","challenge":"תמונה עם הגשר שבה חגית עושה כאילו זה הגשר הפרטי שלה.","photo":"Golden Gate מנקודת תצפית או קו הרקיע מסוסליטו.","song":"I Left My Heart in San Francisco · Tony Bennett","official":"https://www.sftravel.com/","map":"Golden Gate Bridge","free":[["Palace of Fine Arts","עצירה קצרה ופוטוגנית מאוד אם המסלול עובר באזור."],["Ferry Building","קפה/נשנוש ליד המים אם נשאר חלון זמן בעיר."]],"restaurants":[["Scoma’s","Fisherman’s Wharf","פירות ים קלאסיים על המים","קלאסי"],["Sotto Mare","North Beach","איטלקי־ימי, מפורסם בצ׳ופינו","אייקוני"],["House of Nanking","Chinatown","סיני ותיק ונוח למסלול","סיני"],["Hog Island Oyster Co.","Ferry Building","אויסטרים ומפרץ","ים"],["The Spinnaker","Sausalito","נוף ישיר לקו הרקיע של SF","נוף"]]},"7":{"weather":"13–33°C · יום חם, בוקר קריר","pace":"טבע אינטנסיבי","hotel":"Sonesta / מלון דומה באזור Tulare–Fresno","hotelArea":"Central Valley","story":"יום טבע ענק: קירות גרניט, מפלים, אורנים ותחושת “איך הדבר הזה אמיתי”. זה יום שצריך בו פחות מסך ויותר להרים את הראש.","tip":"מים, כובע ונעלי הליכה. בבוקר שכבה דקה; בצהריים יכול להיות חם מאוד בעמק.","fact":"יוסמיטי הוכרז כפארק לאומי ב־1890; אל קפיטן מתרומם בערך 900 מטר כמעט אנכית מעל העמק.","challenge":"10 דקות בלי טלפון מול הנוף. אחר כך מותר לצלם 400 תמונות.","photo":"El Capitan / Tunnel View / Yosemite Falls — מה שהמסלול נותן.","song":"Mountain Sound · Of Monsters and Men","official":"https://www.nps.gov/yose/","map":"Yosemite Valley","free":[["Lower Yosemite Fall Trail","מסלול קצר ונגיש יחסית אם יש זמן עצמאי בעמק."],["Valley View","תצפית שקטה יחסית, מושלמת לצילום אחרון לפני היציאה."]],"restaurants":[["The Mountain Room","Yosemite Valley Lodge","ארוחת ערב עם נוף להרים","נוף"],["Base Camp Eatery","Yosemite Valley Lodge","מהיר ונוח באמצע יום","מהיר"],["Curry Village Pizza Deck","Curry Village","פיצה באוויר הפתוח","קליל"],["Degnan’s Kitchen","Yosemite Village","כריכים וסלטים להפסקה קצרה","מהיר"],["The Ahwahnee Dining Room","Yosemite Valley","האופציה האלגנטית וההיסטורית","חגיגי"]]},"8":{"weather":"27–42°C · חם מאוד","pace":"נסיעה + לילה בעיר","hotel":"Luxor / Excalibur — או דומה","hotelArea":"Las Vegas Strip","story":"נפרדים מקליפורניה ונכנסים למדבר. ואז — בום: אורות, קזינו, מלונות בגודל של עיר. וגאס היא לא מקום להבין; היא מקום להסתכל עליו בפה פתוח.","tip":"מים כל הזמן. גם בערב חם. בתוך המלונות המזגן יכול להיות קפוא — עליונית דקה בתיק.","fact":"השם Las Vegas פירושו בספרדית “הכרי־דשא”; בעבר היו באזור מעיינות וצמחייה בלב המדבר.","challenge":"להיכנס למלון הכי מוגזם שאת רואה ולדרג את רמת ההגזמה מ־1 עד 60.","photo":"Bellagio fountains או שלט Welcome to Fabulous Las Vegas.","song":"Viva Las Vegas · Elvis Presley","official":"https://www.visitlasvegas.com/","map":"Las Vegas Strip","free":[["Bellagio Fountains","הקלאסיקה: להגיע בערב למופע מים קצר וחינמי."],["The Venetian Grand Canal","שיטוט ממוזג בין “ונציה” מלאכותית ומוגזמת — בדיוק וגאס."]],"restaurants":[["Best Friend","Park MGM","קוריאני־לוס אנג׳לסי, כיפי ולא רשמי","כיפי"],["Din Tai Fung","ARIA","כיסונים ונודלס, נוח על הסטריפ","אסייתי"],["Eataly Las Vegas","Park MGM","המון אופציות איטלקיות במקום אחד","גמיש"],["Mon Ami Gabi","Paris Las Vegas","ביסטרו עם ישיבה מול הסטריפ","נוף"],["Yardbird","The Venetian","אוכל דרומי אמריקאי","אמריקאי"]]},"9":{"weather":"27–42°C · מדברי","pace":"סכר + קניות + חופש","hotel":"Luxor / Excalibur — או דומה","hotelArea":"Las Vegas Strip","story":"בוקר הנדסי ענק בסכר הובר, ואז חוזרים לוגאס עם זמן לנשום, לקנות ולשוטט בין מלונות. זה יום שאפשר בו סוף סוף לבחור קצת את הקצב.","tip":"בסכר השמש חזקה מאוד. כובע ומים. לא להשאיר דברים רגישים לחום באוטובוס/רכב.","fact":"Hoover Dam יצר את Lake Mead והוא יושב ממש על הגבול בין נבאדה לאריזונה.","challenge":"למצוא את המזכרת הכי קיטשית בוגאס — ולהצטלם איתה בלי לקנות אותה.","photo":"תצפית על Hoover Dam או מראה בלתי אפשרי באחד המלונות.","song":"A Little Less Conversation · Elvis Presley","official":"https://www.usbr.gov/lc/hooverdam/","map":"Hoover Dam","free":[["Bellagio Conservatory","גן עונתי מושקע וממוזג — עצירה מושלמת בין קניות."],["Fremont Street Experience","אם הערב פנוי: וגאס הוותיקה, מסך ענק ואווירה אחרת מהסטריפ."]],"restaurants":[["Gordon Ramsay Hell’s Kitchen","Caesars Palace","חוויה תיאטרלית וקלאסיקות של השף","חוויה"],["Momofuku","The Cosmopolitan","אסייתי מודרני ומנות לחלוקה","מודרני"],["China Poblano","The Cosmopolitan","שילוב סיני־מקסיקני יצירתי","מיוחד"],["Peppermill Restaurant","Las Vegas Blvd","וגאס רטרו, מנות גדולות","רטרו"],["Ellis Island BBQ","Ellis Island","אופציה מקומית ונגישה יותר","מקומי"]]},"10":{"weather":"27–42°C · מדברי","pace":"יום חופשי + מופע","hotel":"Luxor / Excalibur — או דומה","hotelArea":"Las Vegas Strip","story":"יום חופשי. זה היום היחיד שבו חגית יכולה להחליט לבד אם היא רוצה שופינג, בריכה, ספא, עוד מלונות, קפה של שעתיים או פשוט לנוח. בערב — מופע.","tip":"לא למלא את היום כי “צריך”. זה יום התאוששות אסטרטגי לפני הפארקים של יוטה.","fact":"רוב ה־Las Vegas Strip בכלל לא נמצא בתוך גבולות העיר לאס וגאס — חלק גדול ממנו נמצא באזור הלא־מאוגד Paradise.","challenge":"לבחור פינוק אחד שהוא רק בשביל חגית: קוקטייל, ספא, קינוח, קנייה או שעה בלי אף אחד.","photo":"אאוטפיט הערב לפני המופע — תמונת “Vegas 60”.","song":"Luck Be a Lady · Frank Sinatra","official":"https://www.visitlasvegas.com/","map":"Las Vegas Strip","free":[["Sphere","לראות מקרוב את המסך החיצוני העצום; אם יש מופע שמתאים — לבדוק כרטיסים."],["AREA15","מתחם אמנות/בילוי ביזארי וממוזג, טוב אם רוצים משהו שונה מהקזינו."]],"restaurants":[["Bazaar Meat","Las Vegas","ארוחת בשר גדולה לערב מיוחד","חגיגי"],["Le Cirque","Bellagio","צרפתי אלגנטי לערב יום הולדת","יוקרתי"],["Golden Steer Steakhouse","Las Vegas","סטייקהאוס עם אווירת Rat Pack","קלאסי"],["Esther’s Kitchen","Arts District","איטלקי מקומי ואהוב מחוץ לסטריפ","מקומי"],["Herbs & Rye","Las Vegas","סטייקים וקוקטיילים באווירה ישנה","ערב"]]},"11":{"weather":"8–24°C · פער גדול","pace":"יום טבע ארוך","hotel":"La Quinta by Wyndham Kanab — או דומה","hotelArea":"Kanab, Utah","story":"ציון וברייס ביום אחד: הקירות האדומים של Zion ואז עיר של צריחי אבן ב־Bryce. זה בדיוק היום שבגללו ארזנו שכבות.","tip":"בבוקר/ערב יכול להיות קר ממש. פליז קל בתיק, מים, קרם הגנה ונעלי הליכה.","fact":"Bryce Canyon הוא בעצם לא “קניון” יחיד אלא סדרה של אמפיתיאטרונים טבעיים, המלאים ב־hoodoos — צריחי סלע שנשחקו לצורות משונות.","challenge":"לבחור hoodoo אחד ולתת לו שם משפחתי מגוחך.","photo":"Bryce Sunset Point או קירות Zion האדומים.","song":"Beautiful Day · U2","official":"https://www.nps.gov/zion/","map":"Bryce Canyon National Park","free":[["Canyon Overlook area, Zion","אם המסלול והזמן מאפשרים — תצפית קצרה יחסית עם תמורה ענקית."],["Kanab Main Street","בערב: הליכה רגועה בעיירה אחרי יום פארקים אינטנסיבי."]],"restaurants":[["Rocking V Cafe","Kanab","אמריקאי־מערבי באווירה מקומית","מקומי"],["Sego Restaurant","Kanab","מנות קטנות ומודרניות לחלוקה","מיוחד"],["Wild Thyme Cafe","Kanab","אוכל דרום־מערבי ומנות צמחוניות","נעים"],["Peekaboo Canyon Wood Fired Kitchen","Kanab","פיצות ומנות מהטאבון","קליל"],["Brown Box Cafe","Kanab","קפה, קינוחים וארוחה קלה","מתוק"]]},"12":{"weather":"9–28°C · קריר בבוקר","pace":"יום WOW ארוך","hotel":"Fairfield Inn / Days Hotel — או דומה","hotelArea":"Williams / Flagstaff","story":"סכר גלן, אגם פאואל, Horseshoe Bend ואז הגרנד קניון. זה יום שמתחיל יפה וממשיך ליותר ויותר בלתי נתפס.","tip":"שמש חזקה מאוד בתצפיות. בבוקר שכבה, בצהריים כובע וקרם הגנה. לא להתקרב לשפת מצוקים בשביל תמונה.","fact":"בחלקים העמוקים של הגרנד קניון נחשפות שכבות סלע שגילן מתקרב לשני מיליארד שנה.","challenge":"לצלם תמונה אחת בלי אנשים בכלל — רק חגית והמרחב.","photo":"Horseshoe Bend / South Rim של Grand Canyon.","song":"On the Road Again · Willie Nelson","official":"https://www.nps.gov/grca/","map":"Horseshoe Bend Arizona","free":[["Glen Canyon Dam Overlook","אם יש חלון זמן בפייג׳ — תצפית נוספת וקלה יחסית."],["Route 66 Williams","בערב, אם יש כוח: ניאונים, דיינרים ואווירת כביש 66."]],"restaurants":[["Big John’s Texas BBQ","Page","ברביקיו גדול ולא מתנצל","BBQ"],["BirdHouse","Page","עוף מטוגן ואוכל מהיר איכותי","קליל"],["State 48 Tavern","Page","פאב־אוכל עם מנות אמריקאיות","ערב"],["El Tapatio","Page","מקסיקני נוח אחרי יום שטח","מקסיקני"],["Pine Country Restaurant","Williams","דיינר אמריקאי ועוגות ענק","Route 66"]]},"13":{"weather":"פניקס: חם מאוד · DC: חם ולח","pace":"יום מעבר וטיסה","hotel":"Home2 Suites Falls Church — או דומה","hotelArea":"Washington DC / Falls Church","story":"יום שמחליף יבשת בתוך אותה מדינה: מהמדבר של אריזונה לטיסה מזרחה לבירת ארה״ב. זה יום לוגיסטי — וזה בסדר שהוא פחות “אטרקציות”.","tip":"תרופות, מטען, מסמכים ועליונית בתיק היד. לא לשלוח שום דבר חשוב במזוודה.","fact":"וושינגטון DC היא מחוז פדרלי ולא מדינה; התכנון העירוני המקורי שלה הוכן ב־1791 על ידי Pierre L’Enfant.","challenge":"לראות מהחלון בטיסה את שינוי הנוף ולבחור מתי “המערב נגמר”.","photo":"תמונת שדה תעופה: “West Coast → East Coast”.","song":"Fly Away · Lenny Kravitz","official":"https://washington.org/","map":"Falls Church Virginia","free":[["Northside Social Falls Church","אם מגיעים מוקדם מספיק — קפה/נשנוש רגוע ליד אזור המלון."],["Georgetown Waterfront","רק אם הטיסה מקדימה ויש כוח: הליכה קצרה על הפוטומק."]],"restaurants":[["Ellie Bird","Falls Church","אמריקאי מודרני, אופציה טובה לערב","מומלץ"],["Thompson Italian","Falls Church","איטלקי שכונתי ונעים","איטלקי"],["Padaek","Falls Church","לאוטי/תאילנדי עם הרבה טעם","אסייתי"],["Northside Social","Falls Church","קפה ואוכל קל, טוב לשעה מאוחרת","קליל"],["Clare and Don’s Beach Shack","Falls Church","קז׳ואל באווירת חוף משעשעת","קז׳ואל"]]},"14":{"weather":"21–31°C · חם ולח","pace":"המון הליכה + ערב","hotel":"Home2 Suites Falls Church — או דומה","hotelArea":"Washington DC / Falls Church","story":"יום של “אמריקה הרשמית”: הקפיטול, הבית הלבן, האנדרטאות וה־National Mall. בערב העיר מקבלת אופי אחר לגמרי, במיוחד סביב Georgetown.","tip":"מים, נעליים, כובע. הלחות מפתיעה. באנדרטאות יש הרבה שטח פתוח ושמש.","fact":"כשאנדרטת וושינגטון הושלמה ב־1884 היא הייתה המבנה הגבוה בעולם — עד שמגדל אייפל עקף אותה ב־1889.","challenge":"לבחור אנדרטה אחת ולהקדיש דקה לקרוא למה היא שם, לא רק לצלם.","photo":"Lincoln Memorial מול Reflecting Pool, אם המסלול עובר שם.","song":"American Pie · Don McLean","official":"https://washington.org/","map":"National Mall Washington DC","free":[["Kennedy Center rooftop terrace","תצפית חינמית יפה על הפוטומק והעיר, אם יש חלון עצמאי."],["Georgetown Waterfront Park","הליכה קלה בערב, בתי קפה ונוף לנהר."]],"restaurants":[["Old Ebbitt Grill","Downtown DC","קלאסיקה וושינגטונית ליד הבית הלבן","קלאסי"],["Jaleo","Penn Quarter","טאפאס של José Andrés","ספרדי"],["Zaytinya","Penn Quarter","ים־תיכוני למנות לחלוקה","ים תיכוני"],["Yellow","Georgetown","מאפים וקפה בסגנון לבנטיני","קפה"],["Clyde’s of Georgetown","Georgetown","אמריקאי ותיק, נוח לערב","נוח"]]},"15":{"weather":"18–29°C · סוף קיץ","pace":"תרבות + שוקולד","hotel":"Holiday Inn & Suites — או דומה","hotelArea":"Lancaster / Pennsylvania","story":"יום שמוריד הילוך: חבל האמיש, שדות, כרכרות — ואז Hershey והעולם הכי מתוק במסלול. אמריקה של מסורת לצד אמריקה של מותג ענק.","tip":"לבוש נוח וצנוע לביקור באזורי האמיש. לא לצלם אנשים מקרוב בלי רשות.","fact":"Hersheypark נפתח ב־1907 כפארק פנאי לעובדי חברת Hershey ומשפחותיהם.","challenge":"לקנות ממתק שאף אחד בבית לא מכיר ולהביא אותו לטעימת משפחה בישראל.","photo":"כרכרה/נוף כפרי (מרחוק ובכבוד) + משהו שוקולדי מוגזם בהרשי.","song":"Sugar, Sugar · The Archies","official":"https://www.hersheyland.com/hersheys-chocolate-world.html","map":"Hershey Chocolate World","free":[["Kitchen Kettle Village","חנויות קטנות, מאפים ואווירת Lancaster County אם יש זמן."],["Hershey’s Chocolate World shops","להקדיש כמה דקות לשטויות שוקולד שלא באמת צריך — חובה."]],"restaurants":[["Miller’s Smorgasbord","Ronks / Lancaster","בופה Pennsylvania Dutch קלאסי","אמיש"],["Bird-in-Hand Family Restaurant","Bird-in-Hand","אוכל ביתי מקומי","מסורתי"],["Dienner’s Country Restaurant","Ronks","בופה פשוט ופופולרי","מסורתי"],["The Greenfield Restaurant","Lancaster","אופציה רגועה יותר לארוחת ערב","נעים"],["Fenicci’s of Hershey","Hershey","איטלקי ותיק ליד אזור הרשי","איטלקי"]]},"16":{"weather":"14–25°C · נעים/קריר","pace":"טבע + נסיעה + ערב מפלים","hotel":"Courtyard / Fairfield Inn — או דומה","hotelArea":"Niagara Falls area","story":"ממשיכים צפונה: קניון ירוק ומפלים בווטקינס גלן, ואז אחד מרגעי השיא של הטיול — ניאגרה מוארת בלילה.","tip":"נעלי הליכה עם אחיזה ומעיל גשם דק. המדרגות בווטקינס יכולות להיות רטובות.","fact":"ב־Watkins Glen State Park שביל הערוץ עובר ליד 19 מפלים בתוך פחות משני מיילים.","challenge":"לספור כמה פעמים ביום מישהו אומר “וואו”. מעל 60 — ניצחנו.","photo":"ערוץ Watkins Glen ואז צילום לילה מול Niagara.","song":"Waterfalls · TLC","official":"https://parks.ny.gov/parks/watkinsglen","map":"Watkins Glen State Park","free":[["Skylon Tower observation deck","אם נשאר זמן בניאגרה — תצפית גבוהה במיוחד על שלושת המפלים."],["Clifton Hill","הליכה קצרה, אורות ואווירת לונה־פארק ליד המפלים."]],"restaurants":[["Table Rock House Restaurant","Niagara Falls","אוכל עם נוף ישיר למפלים","נוף"],["Skylon Tower Revolving Dining Room","Niagara Falls","מסעדה מסתובבת מעל הנוף","חוויה"],["AG Inspired Cuisine","Niagara Falls","אופציה אלגנטית יותר","חגיגי"],["Flour Mill Scratch Kitchen","Niagara Falls","מטבח מקומי בתוך מלון היסטורי","מקומי"],["Napoli Ristorante & Pizzeria","Niagara Falls","איטלקי נוח לערב","איטלקי"]]},"17":{"weather":"14–25°C · ליד מים קריר","pace":"ניאגרה + דרך לסקרנטון","hotel":"Fairfield Inn Scranton — או דומה","hotelArea":"Scranton, Pennsylvania","story":"בוקר מפלים, Niagara-on-the-Lake ואז מתחילים לרדת דרומה. שילוב של מים עצומים, עיירה אלגנטית ויום כביש ארוך.","tip":"לבגדים רטובים: שקית אטומה בתיק היום. גרביים להחלפה הן רעיון מצוין.","fact":"Niagara Falls הוא למעשה מערכת של שלושה מפלים: Horseshoe Falls, American Falls ו־Bridal Veil Falls.","challenge":"לעמוד מול המפלים ל־30 שניות בלי לצלם. רק להקשיב לרעש.","photo":"קשת בענן ברסס אם היא מופיעה — זה הפריים.","song":"River · Leon Bridges","official":"https://www.niagarafallsusa.com/","map":"Niagara-on-the-Lake Ontario","free":[["Niagara-on-the-Lake lakeside walk","הליכה קצרה ברחובות היפים או ליד האגם אם נשאר זמן."],["Downtown Scranton / The Office mural","אם מגיעים לא מאוחר — בונוס חמוד לחובבי הסדרה The Office."]],"restaurants":[["Treadwell Cuisine","Niagara-on-the-Lake","Farm-to-table באווירה אלגנטית","חגיגי"],["The Irish Harp Pub","Niagara-on-the-Lake","פאב נעים ואוכל לא מסובך","פאב"],["Queenston Heights Restaurant","Niagara region","נוף היסטורי ואוכל קנדי","נוף"],["The Olde Angel Inn","Niagara-on-the-Lake","פאב היסטורי ואווירה בריטית","אווירה"],["Cooper’s Seafood House","Scranton","מוסד מקומי צבעוני לסוף היום","מקומי"]]},"18":{"weather":"19–28°C · חם-נעים","pace":"הגעה + טעימה ממנהטן","hotel":"Hyatt Grand Central / Millennium Broadway — או דומה","hotelArea":"Midtown Manhattan","story":"הפינאלה מתחיל: ניו יורק. רוקפלר, השדרה החמישית, סנטרל פארק והיכרות ראשונה עם האנרגיה שאין בשום מקום אחר.","tip":"להחליף לנעליים הכי נוחות שיש. בעיר הולכים “רק עוד בלוק” ואז מגלים שעברו 18 אלף צעדים.","fact":"התקרה הכחולה של Grand Central מציגה מפת כוכבים — וחלק מהקונסטלציות צוירו בכיוון הפוך מהאופן שבו רואים אותן מכדור הארץ.","challenge":"לעמוד דקה בטיימס סקוור ופשוט להסתכל על האנשים מכל העולם.","photo":"חגית בין האורות של Times Square — תמונת קאבר לטיול.","song":"New York, New York · Frank Sinatra","official":"https://www.nyctourism.com/","map":"Times Square New York","free":[["Bryant Park + NY Public Library","פינה יפה ורגועה יחסית באמצע מידטאון."],["Grand Central Terminal","אם המלון קרוב — להיכנס לאולם הראשי ולראות את התקרה."]],"restaurants":[["Carmine’s Times Square","Midtown","איטלקי משפחתי, מנות ענק לחלוקה","משפחתי"],["Becco","Theater District","פסטה ואווירת ברודווי","איטלקי"],["Joe Allen","Theater District","מוסד אהוב על אנשי תיאטרון","קלאסי"],["Los Tacos No. 1","Times Square","טאקו מהיר ומעולה","מהיר"],["Urban Hawker","Midtown","פוד הול אסייתי עם הרבה בחירה","גמיש"]]},"19":{"weather":"19–28°C · חם-נעים","pace":"יום עמוס מאוד","hotel":"Hyatt Grand Central / Millennium Broadway — או דומה","hotelArea":"Midtown Manhattan","story":"ניו יורק מהבוקר עד הלילה: Village, Chelsea, High Line, SoHo, Chinatown, Wall Street ו־Ground Zero. זה היום שבו העיר לא נותנת לנשום — בקטע טוב.","tip":"לא לשאת יותר מדי. בקבוק מים קטן, מטען, פלסטרים ונעליים. אם צריך — לעצור לקפה, לא “לשרוד”.","fact":"ה־High Line נבנה על מסילת רכבת משא מוגבהת שהובילה סחורות בצד המערבי של מנהטן.","challenge":"לקנות משהו קטן מניו יורק שלא כתוב עליו “I ❤️ NY”.","photo":"High Line עם העיר ברקע או רחוב סוהו טיפוסי.","song":"Empire State of Mind · Jay-Z & Alicia Keys","official":"https://www.nyctourism.com/","map":"Chelsea Market New York","free":[["Little Island","פארק קטן על נהר ההדסון, מושלם לרבע שעה של אוויר."],["Brooklyn Bridge / DUMBO at night","אם יש עוד כוח בערב — אחד הנופים הכי יפים של מנהטן."]],"restaurants":[["Los Tacos No. 1","Chelsea Market","טאקו מהיר באמצע המסלול","מהיר"],["Miznon","Chelsea Market","פיתות ישראליות־ים תיכוניות","קליל"],["Shukette","Chelsea","מזרח־תיכוני אנרגטי ומצוין","ערב"],["Joe’s Pizza","Greenwich Village","פרוסת ניו יורק קלאסית","אייקוני"],["Wo Hop","Chinatown","סיני ותיק למי שרוצה קלאסיקה","קלאסי"]]},"20":{"weather":"19–28°C · תלוי בשעת היציאה","pace":"קניות + טיסה","hotel":"✈️ הלילה כבר בדרך לישראל","hotelArea":"Jersey Gardens / Newark Airport","story":"הבוקר האחרון. עוד שופינג, עוד קפה, ניסיון אחרון לסגור את המזוודה — ואז לשדה. המטרה היא לא להגיע לטיסה מותשים לחלוטין.","tip":"לשקול מזוודה לפני שיוצאים מהמלון. בגדים ונעליים רבים פטורים ממס מכירה בניו ג׳רזי, אבל לא כל מוצר בחנות פטור.","fact":"בניו ג׳רזי רוב הבגדים והנעליים לשימוש רגיל פטורים ממס המכירה של המדינה — סיבה טובה לסיום באאוטלט.","challenge":"לקנות לעצמך דבר אחד שהוא מזכרת אמיתית מהטיול, לא רק “כי היה במבצע”.","photo":"תמונת “המזוודה שרדה 20 יום” רגע לפני הצ׳ק־אין.","song":"Home · Phillip Phillips","official":"https://www.simon.com/mall/the-mills-at-jersey-gardens","map":"The Mills at Jersey Gardens","free":[["Dining Pavilion","אם כולם מתפצלים בקניות — נקודת מפגש פשוטה וקלה."],["Elizabeth River / quick local stop","רק אם יש זמן חריג לפני השדה; אחרת עדיף לא להסתכן בזמנים."]],"restaurants":[["Michelino’s Restaurant","Jersey Gardens area","אופציה קרובה ונוחה לקניות","נוח"],["Chili’s Grill & Bar","Jersey Gardens","בתוך/ליד מתחם הקניות, קל לקבוצה","קז׳ואל"],["Valença Restaurant","Elizabeth","פורטוגזי מקומי מוכר","מקומי"],["Santillo’s Brick Oven Pizza","Elizabeth","פיצה ניו־ג׳רזי אולד־סקול","פיצה"],["Noches de Colombia","Elizabeth","קולומביאני נדיב וצבעוני","לטיני"]]}};
+
+    const routePoints = [
+      {n:1,name:'Los Angeles',lat:34.0522,lon:-118.2437,day:'17–19.08'},
+      {n:2,name:'San Diego',lat:32.7157,lon:-117.1611,day:'18.08'},
+      {n:3,name:'Santa Barbara / Solvang',lat:34.5958,lon:-120.1376,day:'20.08'},
+      {n:4,name:'Monterey',lat:36.6002,lon:-121.8947,day:'21.08'},
+      {n:5,name:'San Francisco',lat:37.7749,lon:-122.4194,day:'21–22.08'},
+      {n:6,name:'Yosemite Valley',lat:37.7456,lon:-119.5936,day:'23.08'},
+      {n:7,name:'Las Vegas',lat:36.1699,lon:-115.1398,day:'24–26.08'},
+      {n:8,name:'Zion / Bryce',lat:37.45,lon:-112.58,day:'27.08'},
+      {n:9,name:'Grand Canyon',lat:36.0544,lon:-112.1401,day:'28.08'},
+      {n:10,name:'Phoenix',lat:33.4484,lon:-112.0740,day:'29.08 · flight'},
+      {n:11,name:'Washington DC',lat:38.9072,lon:-77.0369,day:'29–30.08'},
+      {n:12,name:'Amish Country / Hershey',lat:40.0750,lon:-76.5000,day:'31.08'},
+      {n:13,name:'Watkins Glen',lat:42.3806,lon:-76.8733,day:'01.09'},
+      {n:14,name:'Niagara Falls',lat:43.0896,lon:-79.0849,day:'01–02.09'},
+      {n:15,name:'Scranton',lat:41.4089,lon:-75.6624,day:'02.09'},
+      {n:16,name:'New York City',lat:40.7128,lon:-74.0060,day:'03–05.09'}
+    ];
+
+    const weatherStops = [
+      {name:'לוס אנג׳לס',lat:34.0522,lon:-118.2437,date:'2026-08-17',climate:'לרוב חם ונעים · 20–31°C'},
+      {name:'סאן דייגו',lat:32.7157,lon:-117.1611,date:'2026-08-18',climate:'חוף נעים · 19–27°C'},
+      {name:'סנטה ברברה',lat:34.4208,lon:-119.6982,date:'2026-08-20',climate:'נעים ליד הים · 18–27°C'},
+      {name:'מונטריי',lat:36.6002,lon:-121.8947,date:'2026-08-21',climate:'קריר ורוחני · 13–21°C'},
+      {name:'סן פרנסיסקו',lat:37.7749,lon:-122.4194,date:'2026-08-22',climate:'קריר בקיץ · 14–20°C'},
+      {name:'יוסמיטי ואלי',lat:37.7456,lon:-119.5936,date:'2026-08-23',climate:'יום חם, בוקר קריר · 13–33°C'},
+      {name:'לאס וגאס',lat:36.1699,lon:-115.1398,date:'2026-08-25',climate:'חום מדברי קיצוני · 26–42°C'},
+      {name:'ברייס קניון',lat:37.6283,lon:-112.1677,date:'2026-08-27',climate:'גובה רב · 8–24°C'},
+      {name:'גרנד קניון',lat:36.0544,lon:-112.1401,date:'2026-08-28',climate:'בוקר/לילה קרירים · 9–28°C'},
+      {name:'וושינגטון DC',lat:38.9072,lon:-77.0369,date:'2026-08-30',climate:'חם ולח · בערך 21–31°C'},
+      {name:'חבל האמיש / לנקסטר',lat:40.0379,lon:-76.3055,date:'2026-08-31',climate:'סוף קיץ · בערך 18–29°C'},
+      {name:'ווטקינס גלן',lat:42.3806,lon:-76.8733,date:'2026-09-01',climate:'נעים עד קריר · בערך 14–25°C'},
+      {name:'מפלי הניאגרה',lat:43.0896,lon:-79.0849,date:'2026-09-01',climate:'קריר ליד המים · בערך 14–24°C'},
+      {name:'סקרנטון',lat:41.4089,lon:-75.6624,date:'2026-09-02',climate:'סוף קיץ · בערך 14–26°C'},
+      {name:'ניו יורק',lat:40.7128,lon:-74.0060,date:'2026-09-03',climate:'חם-נעים, ייתכן גשם · בערך 19–28°C'}
+    ];
+
+    const baseChecklist = [
+      {cat:'מסמכים וכסף',items:['דרכון בתוקף','אישור ESTA','ביטוח נסיעות','מסמכי רימון / פרטי הטיסות','כרטיס אשראי עיקרי','כרטיס אשראי גיבוי במקום נפרד','מעט דולרים במזומן','צילום מסמכים בנייד/ענן']},
+      {cat:'בגדים',items:['8–10 חולצות קצרות/קלילות','4–5 מכנסיים/חצאיות נוחים','10–12 פריטי הלבשה תחתונה','8–10 זוגות גרביים','2 פיג׳מות','קרדיגן / עליונית דקה','פליז / סווטשירט חם אחד','מעיל גשם קל ומתקפל','סט חגיגי אחד לערב/יום הולדת','בגד ים']},
+      {cat:'נעליים ואביזרים',items:['נעלי הליכה נוחות שכבר ננעלו','זוג נעליים נוסף קל','כובע שמש','משקפי שמש','צעיף דק / שאל לערבים קרירים','תיק יום קטן ונוח']},
+      {cat:'טיסה וטכנולוגיה',items:['טלפון','מטען לטלפון','מתאם תקע לארה״ב Type A/B','אוזניות','Power Bank אחד עם סימון Wh ברור','כבל טעינה נוסף','AirTag / תג איתור למזוודה אם יש','בקבוק מים ריק למילוי אחרי הבידוק']},
+      {cat:'רחצה ובריאות',items:['תרופות קבועות בתיק היד','קרם הגנה','כלי רחצה בגודל מתאים','מברשת ומשחת שיניים','דאודורנט','שפתון לחות','פלסטרים / ערכה קטנה לשפשופים','טישו / מגבונים']},
+      {cat:'בונוס חגית',items:['להשאיר 20–25% מקום פנוי במזוודה','לשים סט החלפה אחד בתיק היד','להוריד מוזיקה/סדרה לטלפון לפני הטיסה','לצלם תמונה מטורפת בכל מדינה','לחגוג 60 כאילו אמריקה נבנתה בשבילך']}
+    ];
+
+    const esc=s=>String(s??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const mapsUrl=q=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q);
+    const googleUrl=q=>'https://www.google.com/search?q='+encodeURIComponent(q);
+    const youtubeUrl=q=>'https://www.youtube.com/results?search_query='+encodeURIComponent(q);
+
+    function currentTripDay(){
+      const start=new Date('2026-08-17T00:00:00');
+      const end=new Date('2026-09-05T23:59:59');
+      const now=new Date();
+      if(now<start) return 0;
+      if(now>end) return 21;
+      return Math.min(20,Math.floor((now-start)/86400000)+1);
+    }
+
+    function renderTripNow(){
+      const n=currentTripDay(), el=document.getElementById('tripNow');
+      if(!el) return;
+      if(n===0){
+        const left=Math.max(1,Math.ceil((new Date('2026-08-17T00:00:00')-new Date())/86400000));
+        el.innerHTML=`<div class="now-icon">🧳</div><div><h3>עוד ${left} ימים — אמריקה מתחילה</h3><p>הכרטיס הראשון כבר מחכה. אפשר לפתוח עכשיו ולצלם מסך של הדברים החשובים.</p></div><button class="btn btn-primary" onclick="openDay(1)">ליום 1 →</button>`;
+      }else if(n===21){
+        el.innerHTML='<div class="now-icon">🥹</div><div><h3>המסע הסתיים — אבל האתר נשאר</h3><p>20 ימים, שתי חופיות, אינסוף תמונות ויום הולדת 60 אחד ענק.</p></div><button class="btn btn-primary" onclick="openAllDays()">לפתוח זיכרונות</button>';
+      }else{
+        const d=days[n-1];
+        el.innerHTML=`<div class="now-icon">📍</div><div><h3>היום: יום ${n} — ${esc(d.title)}</h3><p>${esc(d.desc)}</p></div><button class="btn btn-primary" onclick="openDay(${n})">פתחי את היום ✨</button>`;
+      }
+    }
+
+    function renderTimeline(){
+      const el=document.getElementById('timeline');
+      const active=currentTripDay();
+      el.innerHTML=days.map(x=>{
+        const e=dayExtras[x.d]||{};
+        const rests=(e.restaurants||[]).map(r=>`<div class="restaurant"><div><span class="restaurant-tag">${esc(r[3])}</span><strong>${esc(r[0])}</strong><p>${esc(r[1])} · ${esc(r[2])}</p></div><div class="restaurant-actions"><a target="_blank" rel="noopener" href="${mapsUrl(r[0]+' '+r[1])}">📍 Maps</a><a target="_blank" rel="noopener" href="${googleUrl(r[0]+' '+r[1]+' official menu')}">🌐 מידע</a></div></div>`).join('');
+        const free=(e.free||[]).map(f=>`<div class="free-item"><b>✨ ${esc(f[0])}</b><p>${esc(f[1])}</p><a class="mini-btn" target="_blank" rel="noopener" href="${mapsUrl(f[0]+' '+(e.hotelArea||x.title))}">📍 לפתוח במפה</a></div>`).join('');
+        const tags=x.tags.map(t=>`<span class="mini-tag">${esc(t)}</span>`).join('');
+        const isToday=active===x.d?' today open':'';
+        return `<article class="day-world${isToday}" id="day-${x.d}" data-day="${x.d}">
+          <div class="day-world-head" onclick="toggleDay(${x.d})">
+            <div class="day-orb"><div><b>${x.d}</b><small>${esc(x.date)}</small></div></div>
+            <div class="day-world-title"><h3>${esc(x.title)}</h3><p>${esc(x.desc)}</p><div class="day-head-meta">${tags}<span class="mini-tag">⏱️ ${esc(e.pace)}</span></div></div>
+            <button class="day-expand" aria-label="פתיחת יום">⌄</button>
+          </div>
+          <div class="day-world-body">
+            <div class="day-quick">
+              <div class="quick-cell"><small>🌤️ מזג אוויר</small><b>${esc(e.weather)}</b></div>
+              <div class="quick-cell"><small>🏨 לינה</small><b>${esc(e.hotelArea)}</b></div>
+              <div class="quick-cell"><small>👟 קצב</small><b>${esc(e.pace)}</b></div>
+              <div class="quick-cell"><small>🎧 שיר היום</small><b>${esc(e.song)}</b></div>
+            </div>
+            <div class="day-story"><b>🎬 הסיפור של היום</b><p>${esc(e.story)}</p></div>
+            <div class="day-columns">
+              <section class="day-panel"><h4>🍽️ לפחות 5 מקומות ששווה לשמור</h4><div class="restaurant-list">${rests}</div></section>
+              <div>
+                <section class="day-panel"><h4>🪄 אם פתאום נפתח זמן חופשי</h4><div class="free-list">${free}</div></section>
+                <div class="spark-grid">
+                  <div class="spark"><div class="spark-icon">🤯</div><b>עובדה מעניינת</b><p>${esc(e.fact)}</p></div>
+                  <div class="spark"><div class="spark-icon">🎯</div><b>אתגר חגית 60</b><p>${esc(e.challenge)}</p></div>
+                  <div class="spark"><div class="spark-icon">📸</div><b>משימת צילום</b><p>${esc(e.photo)}</p></div>
+                  <div class="spark"><div class="spark-icon">🧠</div><b>טיפ חכם</b><p>${esc(e.tip)}</p></div>
+                </div>
+              </div>
+            </div>
+            <div class="hotel-night"><div class="hotel-copy"><b>🏨 הלילה: ${esc(e.hotel)}</b><span>המלון בפועל עשוי להיות זה או מלון דומה לפי מסמכי הקבוצה הסופיים.</span></div><a class="mini-btn" target="_blank" rel="noopener" href="${mapsUrl((e.hotel||'')+' '+(e.hotelArea||''))}">📍 המלון/האזור</a></div>
+            <div class="day-links"><a class="day-link" target="_blank" rel="noopener" href="${mapsUrl(e.map||x.title)}">🗺️ מפת היום</a><a class="day-link" target="_blank" rel="noopener" href="${e.official||'#'}">🌐 אתר רשמי</a><a class="day-link" target="_blank" rel="noopener" href="${youtubeUrl((e.map||x.title)+' 4K travel')}">▶️ וידאו לאווירה</a><a class="day-link" target="_blank" rel="noopener" href="${youtubeUrl(e.song||x.title)}">🎧 השיר</a></div>
+          </div>
+        </article>`;
+      }).join('');
+      const jump=document.getElementById('dayJump');
+      if(jump) jump.innerHTML=days.map(d=>`<button class="${active===d.d?'active':''}" onclick="openDay(${d.d})" title="${esc(d.title)}">${d.d}</button>`).join('');
+      renderTripNow();
+    }
+
+    function toggleDay(n){const el=document.getElementById('day-'+n);if(el)el.classList.toggle('open')}
+    function openDay(n){const el=document.getElementById('day-'+n);if(!el)return;el.classList.add('open');el.scrollIntoView({behavior:'smooth',block:'start'});}
+    function openAllDays(){document.querySelectorAll('.day-world').forEach(x=>x.classList.add('open'))}
+    function closeAllDays(){document.querySelectorAll('.day-world').forEach(x=>x.classList.remove('open'))}
+    function jumpToCurrentDay(){const n=currentTripDay();openDay(n>=1&&n<=20?n:1)}
+
+    function renderCountdown(){
+      const el=document.getElementById('countdown');
+      const now=new Date();
+      let diff=tripStart-now;
+      if(diff<=0){ el.innerHTML='<div class="count-box" style="grid-column:1/-1"><span class="count-num">🇺🇸</span><div class="count-label">המסע התחיל — חגית באמריקה!</div></div>'; return; }
+      const daysLeft=Math.floor(diff/86400000); diff%=86400000;
+      const h=Math.floor(diff/3600000); diff%=3600000;
+      const m=Math.floor(diff/60000); const s=Math.floor((diff%60000)/1000);
+      el.innerHTML=[[daysLeft,'ימים'],[h,'שעות'],[m,'דקות'],[s,'שניות']].map(([n,l])=>`<div class="count-box"><span class="count-num">${String(n).padStart(2,'0')}</span><div class="count-label">${l}</div></div>`).join('');
+    }
+    renderCountdown(); setInterval(renderCountdown,1000);
+
+    function initMap(){
+      if(typeof L==='undefined'){document.getElementById('map').style.display='none';document.getElementById('mapFallback').style.display='flex';return}
+      const map=L.map('map',{scrollWheelZoom:false,zoomControl:true}).setView([38,-108],4);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
+      const west=routePoints.slice(0,10).map(p=>[p.lat,p.lon]);
+      const east=routePoints.slice(10).map(p=>[p.lat,p.lon]);
+      L.polyline(west,{color:'#ff8a78',weight:4,opacity:.85}).addTo(map);
+      L.polyline([[routePoints[9].lat,routePoints[9].lon],[routePoints[10].lat,routePoints[10].lon]],{color:'#ffd36b',weight:3,opacity:.8,dashArray:'10 8'}).addTo(map);
+      L.polyline(east,{color:'#79a8ff',weight:4,opacity:.85}).addTo(map);
+      routePoints.forEach(p=>{
+        const icon=L.divIcon({className:'',html:`<div class="marker-number">${p.n}</div>`,iconSize:[34,34],iconAnchor:[17,17]});
+        L.marker([p.lat,p.lon],{icon}).addTo(map).bindPopup(`<b>${p.name}</b><br><span>${p.day}</span>`);
+      });
+      map.fitBounds(L.latLngBounds(routePoints.map(p=>[p.lat,p.lon])),{padding:[28,28]});
+    }
+
+    const wmo={0:'שמשי',1:'בהיר בעיקר',2:'מעונן חלקית',3:'מעונן',45:'ערפל',48:'ערפל קפוא',51:'טפטוף קל',53:'טפטוף',55:'טפטוף חזק',61:'גשם קל',63:'גשם',65:'גשם חזק',71:'שלג קל',73:'שלג',75:'שלג כבד',80:'ממטרים קלים',81:'ממטרים',82:'ממטרים חזקים',95:'סופות רעמים',96:'סופות רעמים',99:'סופות רעמים'};
+    const weatherIcon=c=>c===0?'☀️':c<=3?'⛅':c<=48?'🌫️':c<=65?'🌧️':c<=75?'❄️':c<=82?'🌦️':'⛈️';
+
+    function weatherSkeleton(){
+      document.getElementById('weatherGrid').innerHTML=weatherStops.map((s,i)=>`<div class="weather-card glass" id="w${i}"><div class="weather-title"><h3>${s.name}</h3><span class="weather-date">ביקור ${new Date(s.date+'T12:00:00').toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'})}</span></div><div class="weather-now">…</div><div class="weather-desc">טוען מזג אוויר חי</div><div class="climate"><b>טווח שימושי:</b> ${s.climate}</div></div>`).join('');
+    }
+
+    async function loadWeather(stop,i){
+      const url=`https://api.open-meteo.com/v1/forecast?latitude=${stop.lat}&longitude=${stop.lon}&current=temperature_2m,apparent_temperature,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&temperature_unit=celsius&timezone=auto&forecast_days=16`;
+      try{
+        const r=await fetch(url); if(!r.ok) throw new Error('weather'); const d=await r.json();
+        const c=d.current||{}; const idx=(d.daily?.time||[]).indexOf(stop.date);
+        const forecast=idx>=0 ? `<div class="forecast-line"><div><span>ביום הביקור</span><b>${Math.round(d.daily.temperature_2m_min[idx])}°–${Math.round(d.daily.temperature_2m_max[idx])}°</b></div><div><span>סיכוי גשם</span><b>${d.daily.precipitation_probability_max[idx] ?? 0}%</b></div></div><div class="weather-state"><span class="weather-dot"></span>תחזית זמינה לתאריך הביקור</div>` : `<div class="weather-state">📅 תאריך הביקור עדיין מחוץ לטווח התחזית; הכרטיס יתעדכן אוטומטית כשיתקרב.</div>`;
+        document.getElementById(`w${i}`).innerHTML=`<div class="weather-title"><h3>${stop.name}</h3><span class="weather-date">ביקור ${new Date(stop.date+'T12:00:00').toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'})}</span></div><div class="weather-now">${weatherIcon(c.weather_code)} ${Math.round(c.temperature_2m)}°</div><div class="weather-desc">עכשיו: ${wmo[c.weather_code]||'מזג אוויר משתנה'} · מרגיש כמו ${Math.round(c.apparent_temperature)}°</div>${forecast}<div class="climate"><b>טווח שימושי:</b> ${stop.climate}</div>`;
+      }catch(e){
+        document.getElementById(`w${i}`).innerHTML=`<div class="weather-title"><h3>${stop.name}</h3><span class="weather-date">ביקור ${new Date(stop.date+'T12:00:00').toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'})}</span></div><div class="weather-now">🌤️</div><div class="weather-desc">לא הצלחתי למשוך כרגע נתון חי.</div><div class="climate"><b>טווח שימושי:</b> ${stop.climate}</div><div class="weather-state">צריך חיבור לאינטרנט לנתונים חיים.</div>`;
+      }
+    }
+    async function loadAllWeather(){weatherSkeleton(); for(let i=0;i<weatherStops.length;i+=3){await Promise.all(weatherStops.slice(i,i+3).map((s,j)=>loadWeather(s,i+j)));}}
+
+    const storageKey='hagit60-checklist-v3';
+    function defaultState(){
+      return baseChecklist.flatMap((g,gi)=>g.items.map((text,ii)=>({id:`b-${gi}-${ii}`,cat:g.cat,text,done:false,custom:false})));
+    }
+    function getState(){try{return JSON.parse(localStorage.getItem(storageKey))||defaultState()}catch{return defaultState()}}
+    function saveState(s){localStorage.setItem(storageKey,JSON.stringify(s));renderChecklist();toast('נשמר ✨')}
+    function renderChecklist(){
+      const s=getState(); const cats=[...new Set(s.map(x=>x.cat))];
+      document.getElementById('checklist').innerHTML=cats.map(cat=>`<div class="category"><h4>${cat}</h4>${s.filter(x=>x.cat===cat).map(x=>`<label class="check-item ${x.done?'done':''}"><input type="checkbox" ${x.done?'checked':''} onchange="toggleItem('${x.id}')"><span class="item-text">${escapeHtml(x.text)}</span>${x.custom?`<button type="button" class="delete-item" onclick="event.preventDefault();deleteItem('${x.id}')">×</button>`:''}</label>`).join('')}</div>`).join('');
+      const done=s.filter(x=>x.done).length; const pct=s.length?Math.round(done/s.length*100):0; document.getElementById('progressBar').style.width=pct+'%'; document.getElementById('progressText').textContent=`${pct}% ארוז · ${done}/${s.length}`;
+    }
+    function toggleItem(id){const s=getState();const x=s.find(i=>i.id===id);if(x)x.done=!x.done;localStorage.setItem(storageKey,JSON.stringify(s));renderChecklist()}
+    function addCustomItem(){const input=document.getElementById('newItem');const text=input.value.trim();if(!text)return;const s=getState();s.push({id:'c-'+Date.now(),cat:'הוספנו בעצמנו',text,done:false,custom:true});input.value='';saveState(s)}
+    function deleteItem(id){saveState(getState().filter(x=>x.id!==id))}
+    function resetChecklist(){const s=getState().map(x=>({...x,done:false}));saveState(s)}
+    function copyChecklist(){const s=getState();const cats=[...new Set(s.map(x=>x.cat))];const txt=cats.map(c=>`${c}\n`+s.filter(x=>x.cat===c).map(x=>`${x.done?'✓':'☐'} ${x.text}`).join('\n')).join('\n\n');navigator.clipboard?.writeText(txt).then(()=>toast('הרשימה הועתקה 📋')).catch(()=>toast('לא הצלחתי להעתיק'))}
+    function escapeHtml(t){return t.replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]))}
+    function toast(t){const el=document.getElementById('toast');el.textContent=t;el.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>el.classList.remove('show'),1400)}
+    document.getElementById('newItem').addEventListener('keydown',e=>{if(e.key==='Enter')addCustomItem()});
+
+    function party(){
+      const canvas=document.getElementById('confetti'),ctx=canvas.getContext('2d');canvas.width=innerWidth;canvas.height=innerHeight;
+      const colors=['#ffd36b','#ff62a9','#79a8ff','#64e6c3','#ff8a78','#ffffff'];
+      const bits=Array.from({length:180},()=>({x:Math.random()*canvas.width,y:-20-Math.random()*canvas.height*.35,vx:(Math.random()-.5)*4,vy:3+Math.random()*5,r:3+Math.random()*6,a:Math.random()*Math.PI*2,c:colors[Math.floor(Math.random()*colors.length)]}));
+      let f=0;function tick(){ctx.clearRect(0,0,canvas.width,canvas.height);bits.forEach(b=>{b.x+=b.vx;b.y+=b.vy;b.a+=.12;ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.a);ctx.fillStyle=b.c;ctx.fillRect(-b.r,-b.r/2,b.r*2,b.r);ctx.restore()});f++;if(f<190)requestAnimationFrame(tick);else ctx.clearRect(0,0,canvas.width,canvas.height)}tick();toast('HAGIT 60 — AMERICA IS YOURS 🥂');
+    }
+
+    renderTimeline(); renderChecklist();
+    window.addEventListener('load',()=>{initMap();loadAllWeather();setTimeout(()=>party(),700)});
+  </script>
+</body>
+</html>
