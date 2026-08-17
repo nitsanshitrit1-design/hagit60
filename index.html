@@ -1,69 +1,56 @@
-
 <!doctype html>
 <html lang="he" dir="rtl">
 <head>
   <meta charset="utf-8" />
+
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1, viewport-fit=cover"
   />
+
   <meta name="theme-color" content="#080510" />
 
   <title>HAGIT 60 — The American Birthday Journey</title>
 
   <script>
-    /*
-      Always open HAGIT 60 from the top.
-      Must run before the page is rendered so Chrome
-      cannot restore the previous scroll position.
-    */
-
+    // Chrome: never restore an old scroll position
     if ("scrollRestoration" in history) {
       history.scrollRestoration = "manual";
     }
 
-    // Remove old section hashes such as #journal
+    // Remove #journal / #weather / etc. before Chrome jumps
     if (window.location.hash) {
       history.replaceState(
         null,
-        document.title,
+        "",
         window.location.pathname + window.location.search
       );
     }
 
-    // Immediate reset
+    // Start at the top immediately
+    document.documentElement.scrollTop = 0;
     window.scrollTo(0, 0);
 
-    // Chrome / back-forward cache
     window.addEventListener("pageshow", function () {
-      window.scrollTo(0, 0);
       document.documentElement.scrollTop = 0;
 
       if (document.body) {
         document.body.scrollTop = 0;
       }
+
+      window.scrollTo(0, 0);
     });
 
-    // Final protection after the complete page loads
     window.addEventListener("load", function () {
       window.scrollTo(0, 0);
 
-      requestAnimationFrame(function () {
+      setTimeout(function () {
         window.scrollTo(0, 0);
-      });
+      }, 100);
 
       setTimeout(function () {
         window.scrollTo(0, 0);
-      }, 50);
-
-      setTimeout(function () {
-        window.scrollTo(0, 0);
-      }, 250);
-    });
-
-    // Prevent Chrome from saving a lower position
-    window.addEventListener("beforeunload", function () {
-      window.scrollTo(0, 0);
+      }, 500);
     });
   </script>
   <link rel="preconnect" href="https://unpkg.com" />
