@@ -1,43 +1,68 @@
 (() => {
   "use strict";
 
-  const SUPABASE_URL = "https://fqoziqglyrcjttnuismx.supabase.co";
+  const SUPABASE_URL =
+    "https://fqoziqglyrcjttnuismx.supabase.co";
+
   const SUPABASE_PUBLISHABLE_KEY =
     "sb_publishable_2Z_EWufBUdNlSvesyg2bmA_7obNjRsI";
 
   const BUCKET = "journal-photos";
   const REFRESH_MS = 30000;
 
-  const journalSection = document.getElementById("journal");
+  const journalSection =
+    document.getElementById("journal");
 
   if (!journalSection) {
     return;
   }
 
   const preview =
-    journalSection.querySelector(".journal-preview");
+    journalSection.querySelector(
+      ".journal-preview"
+    );
 
   const coming =
-    journalSection.querySelector(".journal-coming");
+    journalSection.querySelector(
+      ".journal-coming"
+    );
 
   const cloudNote =
-    journalSection.querySelector(".journal-cloud-note");
+    journalSection.querySelector(
+      ".journal-cloud-note"
+    );
 
   if (!preview) {
     return;
   }
 
+  const carouselPositions =
+    new Map();
+
+  let isLoading = false;
+  let lastPayload = "";
+
+  preparePageNavigation();
   injectStyles();
+  installMobileNavigation();
+  bindAnchorNavigation();
+  observeSections();
 
   if (cloudNote) {
     cloudNote.innerHTML = `
       <span>☁️</span>
+
       <div>
-        <b>יומן חי מהאייפון של חגית</b>
+        <b>
+          יומן חי מהאייפון של חגית
+        </b>
+
         <small>
-          כל זיכרון שחגית משתפת מה־Photos
-          מופיע כאן אוטומטית עם התמונה,
-          הכיתוב, התאריך והמיקום.
+          כל תמונה שחגית משתפת
+          מופיעה כאן אוטומטית,
+          מסודרת לפי יום,
+          עם הכיתוב, התאריך
+          והמיקום שלה.
         </small>
       </div>
     `;
@@ -45,9 +70,19 @@
 
   if (coming) {
     coming.innerHTML = `
-      <b>📸 HAGIT'S LIVE DIARY</b>
-      הזיכרונות מתעדכנים אוטומטית לאורך הטיול —
-      בלי העלאה ידנית לאתר.
+      <div
+        class="journal-live-footer-copy"
+      >
+        <b>
+          📸 HAGIT'S LIVE DIARY
+        </b>
+
+        <span>
+          החליקו בין התמונות בכל יום —
+          היומן מתעדכן אוטומטית
+          לאורך הטיול.
+        </span>
+      </div>
 
       <button
         class="journal-refresh-btn"
@@ -59,14 +94,13 @@
     `;
   }
 
-  preview.id = "journalLiveGallery";
+  preview.id =
+    "journalLiveGallery";
+
   preview.setAttribute(
     "aria-live",
     "polite"
   );
-
-  let isLoading = false;
-  let lastPayload = "";
 
   const refreshButton =
     document.getElementById(
@@ -100,16 +134,24 @@
       manual &&
       refreshButton
     ) {
-      refreshButton.disabled = true;
+      refreshButton.disabled =
+        true;
+
       refreshButton.textContent =
         "מרענן…";
     }
 
     try {
       const endpoint =
-        `${SUPABASE_URL}/rest/v1/journal_entries` +
-        `?select=id,created_at,taken_at,location_name,day_number,caption,image_path` +
-        `&order=taken_at.asc.nullslast,created_at.asc`;
+        `${SUPABASE_URL}` +
+        `/rest/v1/journal_entries` +
+        `?select=` +
+        `id,created_at,taken_at,` +
+        `location_name,day_number,` +
+        `caption,image_path` +
+        `&order=` +
+        `taken_at.asc.nullslast,` +
+        `created_at.asc`;
 
       const response =
         await fetch(
@@ -138,10 +180,13 @@
         await response.json();
 
       const payload =
-        JSON.stringify(entries);
+        JSON.stringify(
+          entries
+        );
 
       if (
-        payload !== lastPayload
+        payload !==
+        lastPayload
       ) {
         render(entries);
 
@@ -171,9 +216,13 @@
     }
   }
 
-  function render(entries) {
+  function render(
+    entries
+  ) {
     if (
-      !Array.isArray(entries) ||
+      !Array.isArray(
+        entries
+      ) ||
       entries.length === 0
     ) {
       preview.className =
@@ -189,7 +238,9 @@
           <b>60</b>
         </div>
 
-        <div class="journal-empty-copy">
+        <div
+          class="journal-empty-copy"
+        >
           <small>
             HAGIT'S USA DIARY ·
             WAITING FOR PAGE ONE
@@ -197,7 +248,9 @@
 
           <h3 dir="ltr">
             THE STORY<br>
-            <em>STARTS HERE.</em>
+            <em>
+              STARTS HERE.
+            </em>
           </h3>
 
           <p>
@@ -217,41 +270,23 @@
       return;
     }
 
+    const groups =
+      groupEntries(
+        entries
+      );
+
     preview.className =
       "journal-live-days";
 
-    const groups =
-      groupEntries(entries);
-
     preview.innerHTML =
       groups
-        .map(renderGroup)
+        .map(
+          renderGroup
+        )
         .join("");
 
-    preview
-      .querySelectorAll(
-        "[data-journal-image]"
-      )
-      .forEach(
-        (button) => {
-          button.addEventListener(
-            "click",
-            () => {
-              openLightbox(
-                button.dataset.src ||
-                  "",
-
-                button.dataset
-                  .caption ||
-                  "",
-
-                button.dataset.meta ||
-                  ""
-              );
-            }
-          );
-        }
-      );
+    bindCarousels();
+    bindLightboxButtons();
   }
 
   function groupEntries(
@@ -261,7 +296,8 @@
       new Map();
 
     for (
-      const entry of entries
+      const entry of
+      entries
     ) {
       const dateKey =
         getDateKey(
@@ -275,11 +311,15 @@
           : `date-${dateKey}`;
 
       if (
-        !grouped.has(key)
+        !grouped.has(
+          key
+        )
       ) {
         grouped.set(
           key,
           {
+            key,
+
             dayNumber:
               entry.day_number ||
               null,
@@ -294,7 +334,9 @@
       grouped
         .get(key)
         .entries
-        .push(entry);
+        .push(
+          entry
+        );
     }
 
     return [
@@ -311,16 +353,22 @@
           );
         }
 
-        if (a.dayNumber) {
+        if (
+          a.dayNumber
+        ) {
           return -1;
         }
 
-        if (b.dayNumber) {
+        if (
+          b.dayNumber
+        ) {
           return 1;
         }
 
-        return a.dateKey.localeCompare(
-          b.dateKey
+        return (
+          a.dateKey.localeCompare(
+            b.dateKey
+          )
         );
       }
     );
@@ -338,10 +386,6 @@
           first.created_at
       );
 
-    const location =
-      first.location_name ||
-      "הרגע של חגית";
-
     const label =
       group.dayNumber
         ? `DAY ${String(
@@ -352,63 +396,173 @@
           )}`
         : "MEMORY";
 
+    const count =
+      group.entries.length;
+
+    const countText =
+      count === 1
+        ? "זיכרון אחד"
+        : `${count} זיכרונות`;
+
+    const startIndex =
+      Math.min(
+        carouselPositions.get(
+          group.key
+        ) || 0,
+
+        Math.max(
+          count - 1,
+          0
+        )
+      );
+
     return `
       <section
         class="journal-day-block"
+        data-carousel-group="${escapeAttr(
+          group.key
+        )}"
+        data-start-index="${startIndex}"
       >
         <header
           class="journal-day-head"
         >
-          <div>
-            <span>
-              ${escapeHtml(label)}
+          <div
+            class="journal-day-title-row"
+          >
+            <span
+              class="journal-day-label"
+            >
+              ${escapeHtml(
+                label
+              )}
             </span>
 
-            <h3>
+            <span
+              class="journal-day-count"
+            >
               ${escapeHtml(
-                location
+                countText
               )}
-            </h3>
+            </span>
           </div>
 
-          <time>
-            ${escapeHtml(date)}
-          </time>
+          <div
+            class="journal-day-date"
+          >
+            ${escapeHtml(
+              date
+            )}
+          </div>
         </header>
 
         <div
-          class="
-            journal-live-grid
-            ${
-              group.entries
-                .length === 1
-                ? "journal-single"
-                : ""
-            }
-          "
+          class="journal-carousel-shell"
         >
-          ${
-            group.entries
+          <div
+            class="journal-carousel-track"
+            data-carousel-track
+            aria-label="תמונות מהיום הזה"
+          >
+            ${group.entries
               .map(
                 (
                   entry,
                   index
                 ) =>
-                  renderMemory(
+                  renderSlide(
                     entry,
-                    index
+                    index,
+                    count
                   )
               )
-              .join("")
+              .join("")}
+          </div>
+
+          ${
+            count > 1
+              ? `
+                <button
+                  class="
+                    journal-carousel-arrow
+                    journal-carousel-prev
+                  "
+                  type="button"
+                  data-carousel-prev
+                  aria-label="לתמונה הקודמת"
+                >
+                  ‹
+                </button>
+
+                <button
+                  class="
+                    journal-carousel-arrow
+                    journal-carousel-next
+                  "
+                  type="button"
+                  data-carousel-next
+                  aria-label="לתמונה הבאה"
+                >
+                  ›
+                </button>
+              `
+              : ""
           }
+        </div>
+
+        <div
+          class="journal-carousel-bottom"
+        >
+          <div
+            class="journal-carousel-dots"
+            data-carousel-dots
+          >
+            ${
+              count > 1
+                ? group.entries
+                    .map(
+                      (
+                        _,
+                        index
+                      ) => `
+                        <button
+                          type="button"
+                          class="
+                            journal-carousel-dot
+                            ${
+                              index ===
+                              startIndex
+                                ? "is-active"
+                                : ""
+                            }
+                          "
+                          data-carousel-dot="${index}"
+                          aria-label="מעבר לתמונה ${
+                            index + 1
+                          }"
+                        ></button>
+                      `
+                    )
+                    .join("")
+                : ""
+            }
+          </div>
+
+          <span
+            class="journal-carousel-counter"
+            data-carousel-counter
+          >
+            ${startIndex + 1} / ${count}
+          </span>
         </div>
       </section>
     `;
   }
 
-  function renderMemory(
+  function renderSlide(
     entry,
-    index
+    index,
+    count
   ) {
     const imageUrl =
       publicImageUrl(
@@ -416,15 +570,15 @@
       );
 
     const caption =
-      (
+      String(
         entry.caption ||
-        ""
+          ""
       ).trim();
 
     const location =
-      (
+      String(
         entry.location_name ||
-        ""
+          ""
       ).trim();
 
     const dateTime =
@@ -438,23 +592,21 @@
         location,
         dateTime,
       ]
-        .filter(Boolean)
+        .filter(
+          Boolean
+        )
         .join(" · ");
-
-    const featured =
-      index === 0
-        ? "journal-memory-featured"
-        : "";
 
     return `
       <article
-        class="
-          journal-live-memory
-          ${featured}
-        "
+        class="journal-carousel-slide"
+        data-carousel-slide
+        aria-label="תמונה ${
+          index + 1
+        } מתוך ${count}"
       >
         <button
-          class="journal-live-photo"
+          class="journal-slide-photo"
           type="button"
           data-journal-image
           data-src="${escapeAttr(
@@ -466,9 +618,19 @@
           data-meta="${escapeAttr(
             meta
           )}"
-          aria-label="פתיחת התמונה"
+          aria-label="פתיחת התמונה במסך מלא"
         >
           <img
+            class="journal-photo-blur"
+            src="${escapeAttr(
+              imageUrl
+            )}"
+            alt=""
+            aria-hidden="true"
+          >
+
+          <img
+            class="journal-photo-main"
             src="${escapeAttr(
               imageUrl
             )}"
@@ -492,7 +654,8 @@
         </button>
 
         <div
-          class="journal-live-copy"
+          class="journal-slide-copy"
+          dir="rtl"
         >
           <div
             class="journal-memory-meta"
@@ -500,7 +663,9 @@
             ${
               location
                 ? `
-                  <span>
+                  <span
+                    class="journal-location"
+                  >
                     📍
                     ${escapeHtml(
                       location
@@ -510,39 +675,319 @@
                 : ""
             }
 
-            <span>
-              🕒
-              ${escapeHtml(
-                dateTime
-              )}
-            </span>
+            ${
+              dateTime
+                ? `
+                  <span>
+                    🕒
+                    ${escapeHtml(
+                      dateTime
+                    )}
+                  </span>
+                `
+                : ""
+            }
           </div>
 
-          ${
-            caption
-              ? `
-                <p
-                  class="journal-memory-caption"
-                >
-                  ״${escapeHtml(
+          <p
+            class="
+              journal-memory-caption
+              ${
+                caption
+                  ? ""
+                  : "journal-memory-caption-empty"
+              }
+            "
+          >
+            ${
+              caption
+                ? `״${escapeHtml(
                     caption
-                  )}״
-                </p>
-              `
-              : `
-                <p
-                  class="
-                    journal-memory-caption
-                    journal-memory-caption-empty
-                  "
-                >
-                  רגע ששווה לשמור.
-                </p>
-              `
-          }
+                  )}״`
+                : "רגע ששווה לשמור."
+            }
+          </p>
         </div>
       </article>
     `;
+  }
+
+  function bindCarousels() {
+    preview
+      .querySelectorAll(
+        "[data-carousel-group]"
+      )
+      .forEach(
+        (
+          groupEl
+        ) => {
+          const key =
+            groupEl.dataset
+              .carouselGroup ||
+            "";
+
+          const track =
+            groupEl.querySelector(
+              "[data-carousel-track]"
+            );
+
+          const slides =
+            [
+              ...groupEl.querySelectorAll(
+                "[data-carousel-slide]"
+              ),
+            ];
+
+          const prev =
+            groupEl.querySelector(
+              "[data-carousel-prev]"
+            );
+
+          const next =
+            groupEl.querySelector(
+              "[data-carousel-next]"
+            );
+
+          const counter =
+            groupEl.querySelector(
+              "[data-carousel-counter]"
+            );
+
+          const dots =
+            [
+              ...groupEl.querySelectorAll(
+                "[data-carousel-dot]"
+              ),
+            ];
+
+          if (
+            !track ||
+            slides.length === 0
+          ) {
+            return;
+          }
+
+          let index =
+            Math.min(
+              Number(
+                groupEl.dataset
+                  .startIndex ||
+                  0
+              ),
+
+              slides.length -
+                1
+            );
+
+          let raf = 0;
+
+          const updateUi =
+            (
+              nextIndex
+            ) => {
+              index =
+                Math.max(
+                  0,
+                  Math.min(
+                    nextIndex,
+                    slides.length -
+                      1
+                  )
+                );
+
+              carouselPositions.set(
+                key,
+                index
+              );
+
+              if (
+                counter
+              ) {
+                counter.textContent =
+                  `${index + 1} / ${slides.length}`;
+              }
+
+              dots.forEach(
+                (
+                  dot,
+                  dotIndex
+                ) => {
+                  dot.classList.toggle(
+                    "is-active",
+                    dotIndex ===
+                      index
+                  );
+                }
+              );
+
+              if (prev) {
+                prev.disabled =
+                  index === 0;
+              }
+
+              if (next) {
+                next.disabled =
+                  index ===
+                  slides.length -
+                    1;
+              }
+            };
+
+          const goTo =
+            (
+              nextIndex,
+              behavior =
+                "smooth"
+            ) => {
+              const safeIndex =
+                Math.max(
+                  0,
+                  Math.min(
+                    nextIndex,
+                    slides.length -
+                      1
+                  )
+                );
+
+              track.scrollTo(
+                {
+                  left:
+                    safeIndex *
+                    track.clientWidth,
+
+                  behavior,
+                }
+              );
+
+              updateUi(
+                safeIndex
+              );
+            };
+
+          if (prev) {
+            prev.addEventListener(
+              "click",
+              () =>
+                goTo(
+                  index - 1
+                )
+            );
+          }
+
+          if (next) {
+            next.addEventListener(
+              "click",
+              () =>
+                goTo(
+                  index + 1
+                )
+            );
+          }
+
+          dots.forEach(
+            (dot) => {
+              dot.addEventListener(
+                "click",
+                () => {
+                  goTo(
+                    Number(
+                      dot.dataset
+                        .carouselDot ||
+                        0
+                    )
+                  );
+                }
+              );
+            }
+          );
+
+          track.addEventListener(
+            "scroll",
+            () => {
+              cancelAnimationFrame(
+                raf
+              );
+
+              raf =
+                requestAnimationFrame(
+                  () => {
+                    if (
+                      !track.clientWidth
+                    ) {
+                      return;
+                    }
+
+                    const visibleIndex =
+                      Math.round(
+                        track.scrollLeft /
+                          track.clientWidth
+                      );
+
+                    updateUi(
+                      visibleIndex
+                    );
+                  }
+                );
+            },
+            {
+              passive: true,
+            }
+          );
+
+          window.addEventListener(
+            "resize",
+            debounce(
+              () =>
+                goTo(
+                  index,
+                  "auto"
+                ),
+              120
+            )
+          );
+
+          requestAnimationFrame(
+            () =>
+              goTo(
+                index,
+                "auto"
+              )
+          );
+
+          updateUi(index);
+        }
+      );
+  }
+
+  function bindLightboxButtons() {
+    preview
+      .querySelectorAll(
+        "[data-journal-image]"
+      )
+      .forEach(
+        (
+          button
+        ) => {
+          button.addEventListener(
+            "click",
+            () => {
+              openLightbox(
+                button.dataset
+                  .src ||
+                  "",
+
+                button.dataset
+                  .caption ||
+                  "",
+
+                button.dataset
+                  .meta ||
+                  ""
+              );
+            }
+          );
+        }
+      );
   }
 
   function renderError() {
@@ -559,7 +1004,9 @@
 
         <h3 dir="ltr">
           ONE SEC.<br>
-          <em>MEMORIES LOADING.</em>
+          <em>
+            MEMORIES LOADING.
+          </em>
         </h3>
 
         <p>
@@ -596,7 +1043,10 @@
     path
   ) {
     const encodedPath =
-      String(path || "")
+      String(
+        path ||
+          ""
+      )
         .split("/")
         .map(
           encodeURIComponent
@@ -638,7 +1088,8 @@
       date.getFullYear(),
 
       String(
-        date.getMonth() + 1
+        date.getMonth() +
+          1
       ).padStart(
         2,
         "0"
@@ -734,6 +1185,10 @@
     caption,
     meta
   ) {
+    if (!src) {
+      return;
+    }
+
     let lightbox =
       document.getElementById(
         "journalLightbox"
@@ -751,10 +1206,20 @@
       lightbox.className =
         "journal-lightbox";
 
+      lightbox.setAttribute(
+        "role",
+        "dialog"
+      );
+
+      lightbox.setAttribute(
+        "aria-modal",
+        "true"
+      );
+
       lightbox.innerHTML = `
         <button
-          class="journal-lightbox-close"
           type="button"
+          class="journal-lightbox-close"
           aria-label="סגירה"
         >
           ×
@@ -763,10 +1228,13 @@
         <div
           class="journal-lightbox-inner"
         >
-          <img alt="">
+          <img
+            alt="תמונה מיומן המסע של חגית"
+          >
 
           <div
             class="journal-lightbox-copy"
+            dir="rtl"
           >
             <p></p>
             <small></small>
@@ -778,17 +1246,26 @@
         lightbox
       );
 
+      const closeButton =
+        lightbox.querySelector(
+          ".journal-lightbox-close"
+        );
+
+      if (closeButton) {
+        closeButton.addEventListener(
+          "click",
+          closeLightbox
+        );
+      }
+
       lightbox.addEventListener(
         "click",
-        (event) => {
+        (
+          event
+        ) => {
           if (
             event.target ===
-              lightbox ||
-            event.target
-              .classList
-              .contains(
-                "journal-lightbox-close"
-              )
+            lightbox
           ) {
             closeLightbox();
           }
@@ -797,7 +1274,9 @@
 
       document.addEventListener(
         "keydown",
-        (event) => {
+        (
+          event
+        ) => {
           if (
             event.key ===
             "Escape"
@@ -808,41 +1287,44 @@
       );
     }
 
-    const img =
+    const image =
       lightbox.querySelector(
         "img"
       );
 
-    const p =
+    const captionEl =
       lightbox.querySelector(
         "p"
       );
 
-    const small =
+    const metaEl =
       lightbox.querySelector(
         "small"
       );
 
-    img.src = src;
+    if (image) {
+      image.src = src;
+    }
 
-    img.alt =
-      caption ||
-      "זיכרון מהטיול של חגית";
+    if (captionEl) {
+      captionEl.textContent =
+        caption
+          ? `״${caption}״`
+          : "";
+    }
 
-    p.textContent =
-      caption
-        ? `״${caption}״`
-        : "";
-
-    small.textContent =
-      meta;
+    if (metaEl) {
+      metaEl.textContent =
+        meta;
+    }
 
     lightbox.classList.add(
       "is-open"
     );
 
-    document.body.style.overflow =
-      "hidden";
+    document.body.classList.add(
+      "journal-lightbox-open"
+    );
   }
 
   function closeLightbox() {
@@ -851,56 +1333,392 @@
         "journalLightbox"
       );
 
-    if (!lightbox) {
-      return;
+    if (lightbox) {
+      lightbox.classList.remove(
+        "is-open"
+      );
     }
 
-    lightbox.classList.remove(
-      "is-open"
+    document.body.classList.remove(
+      "journal-lightbox-open"
+    );
+  }
+
+  function preparePageNavigation() {
+    if (
+      "scrollRestoration"
+      in history
+    ) {
+      history.scrollRestoration =
+        "manual";
+    }
+
+    if (
+      window.location.hash
+    ) {
+      history.replaceState(
+        null,
+        "",
+        window.location.pathname +
+          window.location.search
+      );
+    }
+
+    const forceTop =
+      () => {
+        window.scrollTo({
+          top: 0,
+          left: 0,
+          behavior:
+            "auto",
+        });
+      };
+
+    forceTop();
+
+    requestAnimationFrame(
+      forceTop
     );
 
-    document.body.style.overflow =
-      "";
+    setTimeout(
+      forceTop,
+      80
+    );
   }
 
-  function escapeHtml(
-    value
-  ) {
-    return String(
-      value ?? ""
-    )
-      .replaceAll(
-        "&",
-        "&amp;"
-      )
-      .replaceAll(
-        "<",
-        "&lt;"
-      )
-      .replaceAll(
-        ">",
-        "&gt;"
-      )
-      .replaceAll(
-        '"',
-        "&quot;"
-      )
-      .replaceAll(
-        "'",
-        "&#039;"
+  function installMobileNavigation() {
+    const nav =
+      document.querySelector(
+        ".aviation-nav"
       );
-  }
 
-  const escapeAttr =
-    escapeHtml;
+    const desktopLinks =
+      [
+        ...document.querySelectorAll(
+          ".nav-links a[href^='#']"
+        ),
+      ];
 
-  function injectStyles() {
     if (
-      document.getElementById(
-        "journalLiveStyles"
+      !nav ||
+      desktopLinks.length ===
+        0 ||
+      nav.querySelector(
+        ".hagit-mobile-nav"
       )
     ) {
       return;
+    }
+
+    const mobileNav =
+      document.createElement(
+        "div"
+      );
+
+    mobileNav.className =
+      "hagit-mobile-nav";
+
+    mobileNav.setAttribute(
+      "aria-label",
+      "ניווט באתר"
+    );
+
+    const homeLink = `
+      <a
+        href="#top"
+        data-mobile-nav-link
+      >
+        ראשי
+      </a>
+    `;
+
+    const clonedLinks =
+      desktopLinks
+        .map(
+          (
+            link
+          ) => {
+            const href =
+              link.getAttribute(
+                "href"
+              ) || "";
+
+            const text =
+              link.textContent
+                ?.trim() ||
+              "";
+
+            return `
+              <a
+                href="${escapeAttr(
+                  href
+                )}"
+                data-mobile-nav-link
+              >
+                ${escapeHtml(
+                  text
+                )}
+              </a>
+            `;
+          }
+        )
+        .join("");
+
+    mobileNav.innerHTML = `
+      <div
+        class="hagit-mobile-nav-track"
+      >
+        ${homeLink}
+        ${clonedLinks}
+      </div>
+    `;
+
+    nav.appendChild(
+      mobileNav
+    );
+  }
+
+  function bindAnchorNavigation() {
+    document.addEventListener(
+      "click",
+      (
+        event
+      ) => {
+        const anchor =
+          event.target.closest(
+            "a[href^='#']"
+          );
+
+        if (!anchor) {
+          return;
+        }
+
+        const href =
+          anchor.getAttribute(
+            "href"
+          ) || "";
+
+        if (
+          href === "#" ||
+          href.length < 2
+        ) {
+          return;
+        }
+
+        const target =
+          document.querySelector(
+            href
+          );
+
+        if (!target) {
+          return;
+        }
+
+        event.preventDefault();
+
+        const nav =
+          document.querySelector(
+            ".aviation-nav"
+          );
+
+        const navHeight =
+          nav
+            ? nav.getBoundingClientRect()
+                .height
+            : 0;
+
+        const top =
+          target.getBoundingClientRect()
+            .top +
+          window.scrollY -
+          navHeight -
+          12;
+
+        window.scrollTo({
+          top:
+            Math.max(
+              0,
+              top
+            ),
+
+          behavior:
+            "smooth",
+        });
+
+        history.replaceState(
+          null,
+          "",
+          window.location.pathname +
+            window.location.search
+        );
+      }
+    );
+  }
+
+  function observeSections() {
+    const targetIds = [
+      "top",
+      "route",
+      "journal",
+      "weather",
+      "hotels",
+      "attractions",
+      "watch",
+      "packing",
+    ];
+
+    const targets =
+      targetIds
+        .map(
+          (
+            id
+          ) =>
+            document.getElementById(
+              id
+            )
+        )
+        .filter(
+          Boolean
+        );
+
+    if (
+      !(
+        "IntersectionObserver"
+        in window
+      ) ||
+      targets.length === 0
+    ) {
+      return;
+    }
+
+    const observer =
+      new IntersectionObserver(
+        (
+          entries
+        ) => {
+          const visible =
+            entries
+              .filter(
+                (
+                  entry
+                ) =>
+                  entry.isIntersecting
+              )
+              .sort(
+                (
+                  a,
+                  b
+                ) =>
+                  b.intersectionRatio -
+                  a.intersectionRatio
+              )[0];
+
+          if (!visible) {
+            return;
+          }
+
+          const id =
+            visible.target.id;
+
+          const links =
+            [
+              ...document.querySelectorAll(
+                "[data-mobile-nav-link]"
+              ),
+            ];
+
+          links.forEach(
+            (
+              link
+            ) => {
+              const active =
+                link.getAttribute(
+                  "href"
+                ) ===
+                `#${id}`;
+
+              link.classList.toggle(
+                "is-active",
+                active
+              );
+
+              if (
+                active &&
+                window.innerWidth <=
+                  900
+              ) {
+                centerMobileLink(
+                  link
+                );
+              }
+            }
+          );
+        },
+
+        {
+          rootMargin:
+            "-28% 0px -60% 0px",
+
+          threshold: [
+            0,
+            0.05,
+            0.15,
+          ],
+        }
+      );
+
+    targets.forEach(
+      (
+        target
+      ) =>
+        observer.observe(
+          target
+        )
+    );
+  }
+
+  function centerMobileLink(
+    link
+  ) {
+    const track =
+      link.closest(
+        ".hagit-mobile-nav-track"
+      );
+
+    if (!track) {
+      return;
+    }
+
+    const linkCenter =
+      link.offsetLeft +
+      link.offsetWidth /
+        2;
+
+    const targetLeft =
+      linkCenter -
+      track.clientWidth /
+        2;
+
+    track.scrollTo({
+      left:
+        Math.max(
+          0,
+          targetLeft
+        ),
+
+      behavior:
+        "smooth",
+    });
+  }
+
+  function injectStyles() {
+    const previousStyle =
+      document.getElementById(
+        "hagitJournalLiveStyles"
+      );
+
+    if (previousStyle) {
+      previousStyle.remove();
     }
 
     const style =
@@ -909,467 +1727,1169 @@
       );
 
     style.id =
-      "journalLiveStyles";
+      "hagitJournalLiveStyles";
 
     style.textContent = `
-      .journal-refresh-btn{
-        margin-inline-start:12px;
-        border:1px solid rgba(221,186,255,.18);
-        background:rgba(255,255,255,.055);
-        color:#f4e9f9;
-        border-radius:999px;
-        padding:7px 11px;
-        font-size:11px;
-        font-weight:800;
+      /*
+        ====================================
+        HAGIT 60 — LIVE JOURNAL CAROUSEL
+        ====================================
+      */
+
+      .journal-live-days {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 28px !important;
       }
 
-      .journal-refresh-btn:disabled{
-        opacity:.55;
-      }
-
-      .journal-live-empty{
-        min-height:390px;
-        border:1px solid rgba(220,185,255,.14);
-        border-radius:30px;
-
-        background:
-          radial-gradient(
-            circle at 24% 30%,
-            rgba(255,98,169,.14),
-            transparent 27%
-          ),
-          radial-gradient(
-            circle at 78% 65%,
-            rgba(121,168,255,.12),
-            transparent 30%
-          ),
-          rgba(16,9,24,.52);
-
-        display:grid;
-        grid-template-columns:.8fr 1.2fr;
-        align-items:center;
-        gap:30px;
-        padding:42px;
-        overflow:hidden;
-      }
-
-      .journal-empty-orbit{
-        height:250px;
-        position:relative;
-        display:grid;
-        place-items:center;
-      }
-
-      .journal-empty-orbit b{
-        font:
-          italic 500 150px/.8
-          "Cormorant Garamond",
-          serif;
-
-        color:transparent;
-
-        -webkit-text-stroke:
-          1px
-          rgba(
-            225,
-            198,
-            255,
-            .28
-          );
-      }
-
-      .journal-empty-orbit i{
-        position:absolute;
-        width:230px;
-        height:108px;
-
-        border:
-          1px dashed
-          rgba(
-            255,
-            152,
-            214,
-            .32
-          );
-
-        border-radius:50%;
-        transform:
-          rotate(-18deg);
-      }
-
-      .journal-empty-orbit span{
-        position:absolute;
-        top:31%;
-        right:17%;
-        color:#ffd8ef;
-        font-size:25px;
-      }
-
-      .journal-empty-copy small{
-        font:
-          500 9px
-          "Montserrat",
-          sans-serif;
-
-        letter-spacing:.19em;
-        color:#bca5c8;
-      }
-
-      .journal-empty-copy h3{
-        margin:16px 0;
-
-        font:
-          400
-          clamp(
-            48px,
-            6.8vw,
-            92px
-          )/.75
-          "Cormorant Garamond",
-          serif;
-
-        color:#f8efff;
-        letter-spacing:-.035em;
-      }
-
-      .journal-empty-copy h3 em{
-        color:#cf9aff;
-        font-style:italic;
-      }
-
-      .journal-empty-copy p{
-        max-width:540px;
-        color:#c5b8ca;
-        font-size:16px;
-        line-height:1.8;
-      }
-
-      .journal-empty-status{
-        display:inline-flex;
-        margin-top:10px;
-        padding:9px 13px;
-
-        border-radius:999px;
-
+      .journal-day-block {
+        overflow: hidden;
         border:
           1px solid
           rgba(
-            221,
-            186,
+            224,
+            195,
             255,
             .14
           );
 
-        color:#bdaec5;
-        font-size:12px;
+        border-radius:
+          24px;
+
+        background:
+          radial-gradient(
+            circle at 82% 10%,
+            rgba(
+              174,
+              89,
+              255,
+              .12
+            ),
+            transparent 32%
+          ),
+          linear-gradient(
+            145deg,
+            rgba(
+              22,
+              11,
+              39,
+              .94
+            ),
+            rgba(
+              8,
+              5,
+              16,
+              .96
+            )
+          );
+
+        box-shadow:
+          0 28px 90px
+          rgba(
+            2,
+            0,
+            10,
+            .35
+          );
       }
 
-      .journal-live-days{
-        display:grid;
-        gap:34px;
-      }
-
-      .journal-day-block{
-        display:grid;
-        gap:14px;
-      }
-
-      .journal-day-head{
-        display:flex;
+      .journal-day-head {
+        display: flex;
+        align-items: end;
         justify-content:
           space-between;
-        align-items:end;
-        gap:15px;
+        gap: 18px;
+
+        padding:
+          18px
+          20px
+          14px;
 
         border-bottom:
           1px solid
           rgba(
-            225,
-            195,
+            222,
+            190,
             255,
-            .12
+            .10
           );
-
-        padding:
-          0 4px 12px;
       }
 
-      .journal-day-head span{
-        font:
-          600 9px
+      .journal-day-title-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .journal-day-label {
+        font-family:
           "Montserrat",
           sans-serif;
 
-        letter-spacing:.19em;
-        color:#cf9aff;
+        font-size:
+          12px;
+
+        letter-spacing:
+          .22em;
+
+        color:
+          #e0c8ff;
       }
 
-      .journal-day-head h3{
-        font-size:24px;
-        margin:5px 0 0;
-        color:#f8efff;
-      }
+      .journal-day-count {
+        padding:
+          5px
+          9px;
 
-      .journal-day-head time{
-        font-size:12px;
-        color:#9d90a5;
-      }
+        border-radius:
+          999px;
 
-      .journal-live-grid{
-        display:grid;
-
-        grid-template-columns:
-          repeat(
-            3,
-            minmax(
-              0,
-              1fr
-            )
-          );
-
-        gap:14px;
-      }
-
-      .journal-live-grid.journal-single{
-        grid-template-columns:
-          minmax(
-            0,
-            1fr
-          );
-      }
-
-      .journal-live-memory{
         border:
           1px solid
           rgba(
-            225,
-            195,
+            219,
+            185,
             255,
-            .12
+            .14
           );
 
-        border-radius:24px;
-        overflow:hidden;
+        color:
+          #a99bb6;
+
+        font-size:
+          10px;
+      }
+
+      .journal-day-date {
+        color:
+          #9d8eaa;
+
+        font-family:
+          "Montserrat",
+          sans-serif;
+
+        font-size:
+          10px;
+
+        letter-spacing:
+          .08em;
+
+        white-space:
+          nowrap;
+      }
+
+      .journal-carousel-shell {
+        position:
+          relative;
+
+        overflow:
+          hidden;
+      }
+
+      .journal-carousel-track {
+        direction:
+          ltr;
+
+        display:
+          flex;
+
+        width:
+          100%;
+
+        overflow-x:
+          auto;
+
+        overflow-y:
+          hidden;
+
+        scroll-snap-type:
+          x mandatory;
+
+        scroll-behavior:
+          smooth;
+
+        scrollbar-width:
+          none;
+
+        -ms-overflow-style:
+          none;
+
+        overscroll-behavior-inline:
+          contain;
+
+        touch-action:
+          pan-x pan-y;
+      }
+
+      .journal-carousel-track::-webkit-scrollbar {
+        display:
+          none;
+      }
+
+      .journal-carousel-slide {
+        direction:
+          rtl;
+
+        flex:
+          0 0 100%;
+
+        width:
+          100%;
+
+        min-width:
+          100%;
+
+        scroll-snap-align:
+          start;
+
+        scroll-snap-stop:
+          always;
+      }
+
+      .journal-slide-photo {
+        position:
+          relative;
+
+        display:
+          block;
+
+        width:
+          100%;
+
+        height:
+          clamp(
+            390px,
+            52vw,
+            620px
+          );
+
+        padding:
+          0;
+
+        overflow:
+          hidden;
+
+        border:
+          0;
+
+        border-radius:
+          0;
+
         background:
-          rgba(
-            16,
-            9,
-            24,
-            .66
+          #07040d;
+
+        color:
+          white;
+      }
+
+      .journal-photo-blur,
+      .journal-photo-main {
+        position:
+          absolute;
+
+        inset:
+          0;
+
+        width:
+          100%;
+
+        height:
+          100%;
+      }
+
+      .journal-photo-blur {
+        object-fit:
+          cover;
+
+        transform:
+          scale(
+            1.08
           );
 
-        min-width:0;
+        filter:
+          blur(28px)
+          saturate(.72)
+          brightness(.42);
+
+        opacity:
+          .82;
       }
 
-      .journal-live-grid:not(
-        .journal-single
-      )
-      .journal-memory-featured{
-        grid-column:span 2;
+      .journal-photo-main {
+        object-fit:
+          contain;
+
+        z-index:
+          2;
       }
 
-      .journal-live-photo{
-        position:relative;
-        display:block;
-        width:100%;
-        border:0;
-        padding:0;
-        background:#120b19;
-        overflow:hidden;
-        aspect-ratio:4/5;
-      }
+      .journal-photo-shade {
+        position:
+          absolute;
 
-      .journal-memory-featured
-      .journal-live-photo{
-        aspect-ratio:16/10;
-      }
+        z-index:
+          3;
 
-      .journal-live-photo img{
-        width:100%;
-        height:100%;
-        object-fit:cover;
-        display:block;
+        inset:
+          0;
 
-        transition:
-          transform
-          .5s ease;
-      }
-
-      .journal-live-photo:hover img{
-        transform:
-          scale(1.025);
-      }
-
-      .journal-photo-shade{
-        position:absolute;
-        inset:0;
+        pointer-events:
+          none;
 
         background:
           linear-gradient(
             to top,
             rgba(
-              7,
-              3,
-              12,
-              .34
+              4,
+              2,
+              8,
+              .48
             ),
-            transparent 50%
+            transparent 28%
+          ),
+          linear-gradient(
+            to bottom,
+            rgba(
+              4,
+              2,
+              8,
+              .16
+            ),
+            transparent 20%
           );
       }
 
-      .journal-photo-open{
-        position:absolute;
-        left:14px;
-        top:14px;
+      .journal-photo-open {
+        position:
+          absolute;
 
-        width:36px;
-        height:36px;
+        z-index:
+          4;
 
-        border-radius:50%;
+        top:
+          14px;
 
-        display:grid;
-        place-items:center;
+        left:
+          14px;
+
+        width:
+          34px;
+
+        height:
+          34px;
+
+        display:
+          grid;
+
+        place-items:
+          center;
+
+        border:
+          1px solid
+          rgba(
+            255,
+            255,
+            255,
+            .22
+          );
+
+        border-radius:
+          50%;
 
         background:
           rgba(
-            6,
-            4,
-            10,
-            .55
+            8,
+            5,
+            14,
+            .44
           );
 
-        border:
-          1px solid
-          rgba(
-            255,
-            255,
-            255,
-            .16
+        backdrop-filter:
+          blur(
+            12px
           );
 
-        color:#fff;
+        -webkit-backdrop-filter:
+          blur(
+            12px
+          );
+
+        font-size:
+          15px;
       }
 
-      .journal-live-copy{
+      .journal-slide-copy {
+        min-height:
+          126px;
+
         padding:
-          17px
           18px
-          20px;
+          20px
+          22px;
+
+        background:
+          linear-gradient(
+            180deg,
+            rgba(
+              20,
+              10,
+              34,
+              .96
+            ),
+            rgba(
+              12,
+              7,
+              22,
+              .98
+            )
+          );
       }
 
-      .journal-memory-meta{
-        display:flex;
-        gap:7px;
-        flex-wrap:wrap;
+      .journal-memory-meta {
+        display:
+          flex;
+
+        gap:
+          8px;
+
+        align-items:
+          center;
+
+        flex-wrap:
+          wrap;
+
+        color:
+          #ac9ab8;
+
+        font-size:
+          11px;
       }
 
-      .journal-memory-meta span{
-        font-size:10px;
-        color:#c9bacf;
+      .journal-memory-meta span {
+        padding:
+          6px
+          9px;
 
         border:
           1px solid
           rgba(
-            221,
+            219,
             186,
             255,
-            .12
+            .11
           );
-
-        padding:
-          5px 8px;
 
         border-radius:
           999px;
-      }
-
-      .journal-memory-caption{
-        margin:
-          14px 0 0;
-
-        color:#f7eff9;
-        font-size:18px;
-        line-height:1.55;
-        font-weight:600;
-      }
-
-      .journal-memory-caption-empty{
-        color:#9d90a5;
-        font-weight:400;
-      }
-
-      .journal-lightbox{
-        position:fixed;
-        inset:0;
-        z-index:99999;
 
         background:
           rgba(
-            4,
-            2,
-            8,
-            .93
+            255,
+            255,
+            255,
+            .025
+          );
+      }
+
+      .journal-location {
+        color:
+          #d9c2e8;
+      }
+
+      .journal-memory-caption {
+        margin:
+          14px 0 0;
+
+        color:
+          #f3eaf8;
+
+        font-family:
+          "Heebo",
+          sans-serif;
+
+        font-size:
+          clamp(
+            17px,
+            2vw,
+            22px
           );
 
-        padding:24px;
-        display:none;
-        place-items:center;
+        line-height:
+          1.55;
+
+        font-weight:
+          300;
+      }
+
+      .journal-memory-caption-empty {
+        color:
+          #9d8fa6;
+
+        font-style:
+          italic;
+      }
+
+      .journal-carousel-arrow {
+        position:
+          absolute;
+
+        z-index:
+          7;
+
+        top:
+          calc(
+            50% - 58px
+          );
+
+        width:
+          46px;
+
+        height:
+          46px;
+
+        display:
+          grid;
+
+        place-items:
+          center;
+
+        border:
+          1px solid
+          rgba(
+            255,
+            255,
+            255,
+            .2
+          );
+
+        border-radius:
+          50%;
+
+        background:
+          rgba(
+            8,
+            5,
+            16,
+            .58
+          );
+
+        color:
+          #fff;
 
         backdrop-filter:
-          blur(14px);
-      }
-
-      .journal-lightbox.is-open{
-        display:grid;
-      }
-
-      .journal-lightbox-inner{
-        max-width:
-          min(
-            1000px,
-            94vw
+          blur(
+            16px
           );
 
-        max-height:90vh;
-        display:grid;
-        gap:14px;
+        -webkit-backdrop-filter:
+          blur(
+            16px
+          );
+
+        font:
+          300
+          34px/1
+          "Montserrat",
+          sans-serif;
+
+        transition:
+          .2s opacity,
+          .2s transform,
+          .2s background;
       }
 
-      .journal-lightbox-inner img{
-        max-width:100%;
-        max-height:76vh;
-        object-fit:contain;
-        border-radius:18px;
-        margin:auto;
+      .journal-carousel-arrow:hover {
+        transform:
+          scale(
+            1.06
+          );
+
+        background:
+          rgba(
+            104,
+            53,
+            178,
+            .64
+          );
+      }
+
+      .journal-carousel-arrow:disabled {
+        opacity:
+          .18;
+
+        pointer-events:
+          none;
+      }
+
+      .journal-carousel-prev {
+        left:
+          16px;
+      }
+
+      .journal-carousel-next {
+        right:
+          16px;
+      }
+
+      .journal-carousel-bottom {
+        display:
+          flex;
+
+        align-items:
+          center;
+
+        justify-content:
+          space-between;
+
+        min-height:
+          42px;
+
+        gap:
+          14px;
+
+        padding:
+          8px
+          16px
+          10px;
+
+        border-top:
+          1px solid
+          rgba(
+            220,
+            188,
+            255,
+            .08
+          );
+
+        background:
+          rgba(
+            7,
+            4,
+            13,
+            .88
+          );
+
+        direction:
+          ltr;
+      }
+
+      .journal-carousel-dots {
+        display:
+          flex;
+
+        align-items:
+          center;
+
+        gap:
+          7px;
+
+        min-height:
+          12px;
+      }
+
+      .journal-carousel-dot {
+        width:
+          6px;
+
+        height:
+          6px;
+
+        padding:
+          0;
+
+        border:
+          0;
+
+        border-radius:
+          999px;
+
+        background:
+          rgba(
+            231,
+            211,
+            245,
+            .25
+          );
+
+        transition:
+          .2s width,
+          .2s background;
+      }
+
+      .journal-carousel-dot.is-active {
+        width:
+          22px;
+
+        background:
+          linear-gradient(
+            90deg,
+            #c89cff,
+            #ff78c7
+          );
+      }
+
+      .journal-carousel-counter {
+        color:
+          #8f8199;
+
+        font-family:
+          "Montserrat",
+          sans-serif;
+
+        font-size:
+          9px;
+
+        letter-spacing:
+          .14em;
+      }
+
+      .journal-coming {
+        display:
+          flex;
+
+        align-items:
+          center;
+
+        justify-content:
+          space-between;
+
+        gap:
+          16px;
+      }
+
+      .journal-live-footer-copy {
+        display:
+          flex;
+
+        flex-direction:
+          column;
+
+        gap:
+          3px;
+      }
+
+      .journal-live-footer-copy span {
+        color:
+          #a99cad;
+
+        font-size:
+          12px;
+      }
+
+      .journal-refresh-btn {
+        flex:
+          0 0 auto;
+
+        border:
+          1px solid
+          rgba(
+            218,
+            183,
+            255,
+            .18
+          );
+
+        border-radius:
+          999px;
+
+        padding:
+          9px
+          13px;
+
+        background:
+          rgba(
+            255,
+            255,
+            255,
+            .04
+          );
+
+        color:
+          #eee4f5;
+
+        font:
+          500
+          10px
+          "Heebo",
+          sans-serif;
+      }
+
+      .journal-refresh-btn:disabled {
+        opacity:
+          .5;
+      }
+
+      /*
+        EMPTY / ERROR
+      */
+
+      .journal-live-empty {
+        min-height:
+          330px;
+
+        display:
+          grid !important;
+
+        grid-template-columns:
+          auto
+          minmax(
+            0,
+            1fr
+          ) !important;
+
+        gap:
+          34px !important;
+
+        align-items:
+          center;
+
+        padding:
+          34px;
+
+        border:
+          1px solid
+          rgba(
+            220,
+            187,
+            255,
+            .13
+          );
+
+        border-radius:
+          24px;
+
+        background:
+          radial-gradient(
+            circle at 18% 50%,
+            rgba(
+              141,
+              70,
+              255,
+              .16
+            ),
+            transparent 28%
+          ),
+          linear-gradient(
+            145deg,
+            rgba(
+              18,
+              9,
+              31,
+              .92
+            ),
+            rgba(
+              7,
+              4,
+              13,
+              .96
+            )
+          );
+      }
+
+      .journal-empty-orbit {
+        position:
+          relative;
+
+        width:
+          180px;
+
+        height:
+          180px;
+
+        display:
+          grid;
+
+        place-items:
+          center;
+
+        border:
+          1px solid
+          rgba(
+            223,
+            194,
+            255,
+            .10
+          );
+
+        border-radius:
+          50%;
+      }
+
+      .journal-empty-orbit:before,
+      .journal-empty-orbit:after {
+        content:
+          "";
+
+        position:
+          absolute;
+
+        inset:
+          18px;
+
+        border:
+          1px solid
+          rgba(
+            223,
+            194,
+            255,
+            .08
+          );
+
+        border-radius:
+          50%;
+      }
+
+      .journal-empty-orbit:after {
+        inset:
+          38px;
+      }
+
+      .journal-empty-orbit b {
+        font:
+          italic
+          500
+          62px/1
+          "Cormorant Garamond",
+          serif;
+
+        color:
+          #ead9f7;
+      }
+
+      .journal-empty-orbit span {
+        position:
+          absolute;
+
+        top:
+          18px;
+
+        right:
+          27px;
+
+        color:
+          #ff86cc;
+      }
+
+      .journal-empty-orbit i {
+        position:
+          absolute;
+
+        width:
+          7px;
+
+        height:
+          7px;
+
+        border-radius:
+          50%;
+
+        background:
+          #cda7ff;
+
+        left:
+          24px;
+
+        bottom:
+          40px;
 
         box-shadow:
-          0 30px 100px
+          0 0 18px
+          #9f62ff;
+      }
+
+      .journal-empty-copy small {
+        color:
+          #a590b2;
+
+        font:
+          500
+          9px
+          "Montserrat",
+          sans-serif;
+
+        letter-spacing:
+          .19em;
+      }
+
+      .journal-empty-copy h3 {
+        margin:
+          10px
+          0
+          14px;
+
+        font:
+          400
+          clamp(
+            42px,
+            7vw,
+            80px
+          )/.82
+          "Cormorant Garamond",
+          serif;
+
+        color:
+          #f6edfb;
+      }
+
+      .journal-empty-copy h3 em {
+        color:
+          #cf9aff;
+      }
+
+      .journal-empty-copy p {
+        color:
+          #b9aabc;
+
+        max-width:
+          620px;
+      }
+
+      .journal-empty-status {
+        color:
+          #cdbbd5;
+
+        font-size:
+          12px;
+      }
+
+      /*
+        LIGHTBOX
+      */
+
+      .journal-lightbox {
+        position:
+          fixed;
+
+        z-index:
+          99999;
+
+        inset:
+          0;
+
+        display:
+          none;
+
+        place-items:
+          center;
+
+        padding:
+          24px;
+
+        background:
           rgba(
-            0,
-            0,
-            0,
-            .45
+            3,
+            2,
+            7,
+            .92
+          );
+
+        backdrop-filter:
+          blur(
+            18px
+          );
+
+        -webkit-backdrop-filter:
+          blur(
+            18px
           );
       }
 
-      .journal-lightbox-copy{
-        text-align:center;
+      .journal-lightbox.is-open {
+        display:
+          grid;
       }
 
-      .journal-lightbox-copy p{
-        margin:0;
-        color:#fff;
-        font-size:18px;
+      body.journal-lightbox-open {
+        overflow:
+          hidden;
       }
 
-      .journal-lightbox-copy small{
-        display:block;
-        margin-top:7px;
-        color:#aaa0b1;
+      .journal-lightbox-inner {
+        width:
+          min(
+            1100px,
+            100%
+          );
+
+        max-height:
+          92vh;
+
+        display:
+          grid;
+
+        grid-template-rows:
+          minmax(
+            0,
+            1fr
+          )
+          auto;
+
+        overflow:
+          hidden;
+
+        border:
+          1px solid
+          rgba(
+            231,
+            205,
+            255,
+            .14
+          );
+
+        border-radius:
+          20px;
+
+        background:
+          #08050e;
       }
 
-      .journal-lightbox-close{
-        position:absolute;
+      .journal-lightbox img {
+        width:
+          100%;
+
+        height:
+          min(
+            76vh,
+            820px
+          );
+
+        object-fit:
+          contain;
+
+        background:
+          #040207;
+      }
+
+      .journal-lightbox-copy {
+        padding:
+          15px
+          18px
+          18px;
+      }
+
+      .journal-lightbox-copy p {
+        margin:
+          0 0 5px;
+
+        color:
+          #f5edf9;
+
+        font-size:
+          17px;
+      }
+
+      .journal-lightbox-copy small {
+        color:
+          #9e90a6;
+      }
+
+      .journal-lightbox-close {
+        position:
+          fixed;
+
+        z-index:
+          2;
 
         top:
           max(
@@ -1379,11 +2899,14 @@
             )
           );
 
-        right:18px;
-        width:44px;
-        height:44px;
+        right:
+          20px;
 
-        border-radius:50%;
+        width:
+          44px;
+
+        height:
+          44px;
 
         border:
           1px solid
@@ -1391,101 +2914,472 @@
             255,
             255,
             255,
-            .18
+            .2
           );
+
+        border-radius:
+          50%;
 
         background:
           rgba(
-            255,
-            255,
-            255,
-            .08
+            15,
+            10,
+            22,
+            .76
           );
 
-        color:#fff;
-        font-size:28px;
-        line-height:1;
+        color:
+          white;
+
+        font-size:
+          28px;
       }
 
-      @media(
-        max-width:800px
-      ){
-        .journal-live-empty{
-          grid-template-columns:1fr;
-          padding:28px 20px;
-          text-align:center;
-        }
+      /*
+        MOBILE NAVIGATION
+      */
 
-        .journal-empty-orbit{
-          height:180px;
-        }
+      .aviation-nav {
+        position:
+          sticky;
 
-        .journal-empty-orbit b{
-          font-size:115px;
-        }
+        top:
+          0;
 
-        .journal-empty-orbit i{
-          width:190px;
-          height:88px;
-        }
-
-        .journal-live-grid,
-        .journal-live-grid.journal-single{
-          grid-template-columns:
-            1fr 1fr;
-        }
-
-        .journal-live-grid:not(
-          .journal-single
-        )
-        .journal-memory-featured{
-          grid-column:1/-1;
-        }
+        z-index:
+          9000;
       }
 
-      @media(
-        max-width:560px
-      ){
-        .journal-live-grid,
-        .journal-live-grid.journal-single{
+      .hagit-mobile-nav {
+        display:
+          none;
+      }
+
+      @media (
+        max-width:
+          900px
+      ) {
+        .aviation-nav .nav-links {
+          display:
+            none !important;
+        }
+
+        .hagit-mobile-nav {
+          display:
+            block;
+
+          width:
+            100%;
+
+          border-top:
+            1px solid
+            rgba(
+              218,
+              184,
+              255,
+              .08
+            );
+
+          border-bottom:
+            1px solid
+            rgba(
+              218,
+              184,
+              255,
+              .10
+            );
+
+          background:
+            rgba(
+              8,
+              5,
+              16,
+              .92
+            );
+
+          backdrop-filter:
+            blur(
+              22px
+            );
+
+          -webkit-backdrop-filter:
+            blur(
+              22px
+            );
+        }
+
+        .hagit-mobile-nav-track {
+          direction:
+            rtl;
+
+          display:
+            flex;
+
+          align-items:
+            center;
+
+          gap:
+            7px;
+
+          overflow-x:
+            auto;
+
+          padding:
+            8px
+            12px
+            9px;
+
+          scrollbar-width:
+            none;
+
+          -ms-overflow-style:
+            none;
+
+          overscroll-behavior-inline:
+            contain;
+        }
+
+        .hagit-mobile-nav-track::-webkit-scrollbar {
+          display:
+            none;
+        }
+
+        .hagit-mobile-nav a {
+          flex:
+            0 0 auto;
+
+          text-decoration:
+            none;
+
+          padding:
+            7px
+            11px;
+
+          border:
+            1px solid
+            rgba(
+              219,
+              188,
+              255,
+              .11
+            );
+
+          border-radius:
+            999px;
+
+          background:
+            rgba(
+              255,
+              255,
+              255,
+              .025
+            );
+
+          color:
+            #b9a9c5;
+
+          font-size:
+            11px;
+
+          font-weight:
+            500;
+
+          white-space:
+            nowrap;
+
+          transition:
+            .2s color,
+            .2s background,
+            .2s border-color;
+        }
+
+        .hagit-mobile-nav a.is-active {
+          color:
+            #160b25;
+
+          background:
+            linear-gradient(
+              120deg,
+              #f2e9ff,
+              #d2afff
+            );
+
+          border-color:
+            transparent;
+        }
+
+        .journal-day-block {
+          border-radius:
+            18px;
+        }
+
+        .journal-slide-photo {
+          height:
+            min(
+              58vh,
+              480px
+            );
+
+          min-height:
+            330px;
+        }
+
+        .journal-carousel-arrow {
+          width:
+            40px;
+
+          height:
+            40px;
+
+          font-size:
+            29px;
+        }
+
+        .journal-carousel-prev {
+          left:
+            10px;
+        }
+
+        .journal-carousel-next {
+          right:
+            10px;
+        }
+
+        .journal-day-head {
+          padding:
+            15px
+            15px
+            12px;
+        }
+
+        .journal-slide-copy {
+          padding:
+            15px
+            15px
+            18px;
+
+          min-height:
+            118px;
+        }
+
+        .journal-memory-caption {
+          font-size:
+            17px;
+        }
+
+        .journal-live-empty {
           grid-template-columns:
-            1fr;
+            1fr !important;
+
+          text-align:
+            center;
+
+          padding:
+            30px
+            18px;
         }
 
-        .journal-live-grid:not(
-          .journal-single
-        )
-        .journal-memory-featured{
-          grid-column:auto;
+        .journal-empty-orbit {
+          margin:
+            auto;
+
+          width:
+            150px;
+
+          height:
+            150px;
         }
 
-        .journal-live-photo,
-        .journal-memory-featured
-        .journal-live-photo{
-          aspect-ratio:4/5;
-        }
-
-        .journal-day-head{
+        .journal-coming {
           align-items:
             flex-start;
         }
+      }
 
-        .journal-day-head h3{
-          font-size:20px;
+      @media (
+        max-width:
+          620px
+      ) {
+        .aviation-nav .nav-in {
+          height:
+            56px !important;
+
+          padding-inline:
+            0;
         }
 
-        .journal-day-head time{
-          font-size:10px;
+        .aviation-nav .nav-party {
+          padding:
+            8px
+            10px;
+
+          font-size:
+            8px;
+
+          letter-spacing:
+            .04em;
         }
 
-        .journal-memory-caption{
-          font-size:17px;
+        .aviation-brand span {
+          font-size:
+            15px !important;
         }
 
-        .journal-refresh-btn{
-          display:block;
-          margin:
-            10px 0 0;
+        .aviation-brand small {
+          font-size:
+            7px !important;
+        }
+
+        .wrap {
+          width:
+            min(
+              100% - 22px,
+              1240px
+            ) !important;
+        }
+
+        .section {
+          padding-top:
+            56px !important;
+
+          padding-bottom:
+            56px !important;
+        }
+
+        .birthday-wrap {
+          padding-top:
+            20px !important;
+        }
+
+        .birthday-grid {
+          gap:
+            0 !important;
+        }
+
+        .birthday-art {
+          margin-top:
+            -34px !important;
+        }
+
+        .journal-hero {
+          gap:
+            20px !important;
+        }
+
+        .journal-title {
+          font-size:
+            clamp(
+              46px,
+              16vw,
+              68px
+            ) !important;
+        }
+
+        .journal-intro {
+          font-size:
+            14px !important;
+        }
+
+        .journal-cloud-note {
+          padding:
+            13px !important;
+        }
+
+        .journal-day-head {
+          align-items:
+            flex-start;
+
+          flex-direction:
+            column;
+
+          gap:
+            6px;
+        }
+
+        .journal-slide-photo {
+          height:
+            min(
+              52vh,
+              420px
+            );
+
+          min-height:
+            300px;
+        }
+
+        .journal-carousel-arrow {
+          top:
+            calc(
+              50% - 60px
+            );
+
+          width:
+            36px;
+
+          height:
+            36px;
+
+          font-size:
+            26px;
+        }
+
+        .journal-carousel-bottom {
+          padding-inline:
+            12px;
+        }
+
+        .journal-memory-meta {
+          gap:
+            6px;
+
+          font-size:
+            10px;
+        }
+
+        .journal-memory-meta span {
+          padding:
+            5px
+            8px;
+        }
+
+        .journal-coming {
+          flex-direction:
+            column;
+        }
+
+        .journal-refresh-btn {
+          width:
+            100%;
+        }
+
+        .journal-lightbox {
+          padding:
+            0;
+        }
+
+        .journal-lightbox-inner {
+          width:
+            100%;
+
+          height:
+            100%;
+
+          max-height:
+            none;
+
+          border:
+            0;
+
+          border-radius:
+            0;
+        }
+
+        .journal-lightbox img {
+          height:
+            calc(
+              100vh -
+              120px
+            );
         }
       }
     `;
@@ -1493,5 +3387,72 @@
     document.head.appendChild(
       style
     );
+  }
+
+  function escapeHtml(
+    value
+  ) {
+    return String(
+      value ??
+        ""
+    ).replace(
+      /[&<>"']/g,
+      (
+        char
+      ) => {
+        return {
+          "&":
+            "&amp;",
+
+          "<":
+            "&lt;",
+
+          ">":
+            "&gt;",
+
+          '"':
+            "&quot;",
+
+          "'":
+            "&#39;",
+        }[char];
+      }
+    );
+  }
+
+  function escapeAttr(
+    value
+  ) {
+    return escapeHtml(
+      value
+    ).replace(
+      /`/g,
+      "&#96;"
+    );
+  }
+
+  function debounce(
+    fn,
+    delay
+  ) {
+    let timer =
+      0;
+
+    return (
+      ...args
+    ) => {
+      clearTimeout(
+        timer
+      );
+
+      timer =
+        window.setTimeout(
+          () =>
+            fn(
+              ...args
+            ),
+          delay
+        );
+    };
   }
 })();
