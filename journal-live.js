@@ -1,46 +1,50 @@
 (() => {
   "use strict";
 
-  const SUPABASE_URL =
-    "https://fqoziqglyrcjttnuismx.supabase.co";
-
+  const SUPABASE_URL = "https://fqoziqglyrcjttnuismx.supabase.co";
   const SUPABASE_PUBLISHABLE_KEY =
     "sb_publishable_2Z_EWufBUdNlSvesyg2bmA_7obNjRsI";
-
   const BUCKET = "journal-photos";
   const REFRESH_MS = 30000;
 
-  const journalSection =
-    document.getElementById("journal");
+  const DAY_META = {
+    1: { title: "LOS ANGELES", date: "17 AUG 2026" },
+    2: { title: "SAN DIEGO", date: "18 AUG 2026" },
+    3: { title: "UNIVERSAL · LOS ANGELES", date: "19 AUG 2026" },
+    4: { title: "SANTA BARBARA · SOLVANG", date: "20 AUG 2026" },
+    5: { title: "MONTEREY · SAN FRANCISCO", date: "21 AUG 2026" },
+    6: { title: "SAN FRANCISCO", date: "22 AUG 2026" },
+    7: { title: "YOSEMITE", date: "23 AUG 2026" },
+    8: { title: "LAS VEGAS", date: "24 AUG 2026" },
+    9: { title: "LAS VEGAS · HOOVER DAM", date: "25 AUG 2026" },
+    10: { title: "LAS VEGAS", date: "26 AUG 2026" },
+    11: { title: "ZION · BRYCE", date: "27 AUG 2026" },
+    12: { title: "GRAND CANYON", date: "28 AUG 2026" },
+    13: { title: "PHOENIX → WASHINGTON", date: "29 AUG 2026" },
+    14: { title: "WASHINGTON D.C.", date: "30 AUG 2026" },
+    15: { title: "AMISH COUNTRY · HERSHEY", date: "31 AUG 2026" },
+    16: { title: "WATKINS GLEN · NIAGARA", date: "01 SEP 2026" },
+    17: { title: "NIAGARA · SCRANTON", date: "02 SEP 2026" },
+    18: { title: "NEW YORK CITY", date: "03 SEP 2026" },
+    19: { title: "NEW YORK CITY", date: "04 SEP 2026" },
+    20: { title: "NEW YORK → HOME", date: "05 SEP 2026" },
+  };
 
-  if (!journalSection) {
-    return;
-  }
+  const journalSection = document.getElementById("journal");
+  if (!journalSection) return;
 
-  const preview =
-    journalSection.querySelector(
-      ".journal-preview"
-    );
+  const preview = journalSection.querySelector(".journal-preview");
+  const coming = journalSection.querySelector(".journal-coming");
+  const cloudNote = journalSection.querySelector(".journal-cloud-note");
 
-  const coming =
-    journalSection.querySelector(
-      ".journal-coming"
-    );
-
-  const cloudNote =
-    journalSection.querySelector(
-      ".journal-cloud-note"
-    );
-
-  if (!preview) {
-    return;
-  }
-
-  const carouselPositions =
-    new Map();
+  if (!preview) return;
 
   let isLoading = false;
   let lastPayload = "";
+  let journalGroups = [];
+  let activeGroupIndex = -1;
+  let activeEntryIndex = 0;
+  let storyTouchStartX = null;
 
   preparePageNavigation();
   injectStyles();
@@ -50,19 +54,12 @@
 
   if (cloudNote) {
     cloudNote.innerHTML = `
-      <span>☁️</span>
-
+      <span>✦</span>
       <div>
-        <b>
-          יומן חי מהאייפון של חגית
-        </b>
-
+        <b>20 פרקים. סיפור אחד.</b>
         <small>
-          כל תמונה שחגית משתפת
-          מופיעה כאן אוטומטית,
-          מסודרת לפי יום,
-          עם הכיתוב, התאריך
-          והמיקום שלה.
+          כל יום בטיול הופך לפרק משלו. התמונות נשמרות בפנים —
+          והעמוד הראשי נשאר נקי גם כשהאלבום הולך וגדל.
         </small>
       </div>
     `;
@@ -70,17 +67,11 @@
 
   if (coming) {
     coming.innerHTML = `
-      <div
-        class="journal-live-footer-copy"
-      >
-        <b>
-          📸 HAGIT'S LIVE DIARY
-        </b>
-
+      <div class="journal-chapter-footer-copy">
+        <b>20 CHAPTERS · ONE JOURNEY ✦</b>
         <span>
-          החליקו בין התמונות בכל יום —
-          היומן מתעדכן אוטומטית
-          לאורך הטיול.
+          לחצו על פרק כדי להיכנס ל־Story Mode
+          ולדפדף בכל הזיכרונות של אותו יום.
         </span>
       </div>
 
@@ -94,25 +85,16 @@
     `;
   }
 
-  preview.id =
-    "journalLiveGallery";
-
-  preview.setAttribute(
-    "aria-live",
-    "polite"
-  );
+  preview.id = "journalLiveGallery";
+  preview.setAttribute("aria-live", "polite");
 
   const refreshButton =
-    document.getElementById(
-      "journalRefreshBtn"
-    );
+    document.getElementById("journalRefreshBtn");
 
-  if (refreshButton) {
-    refreshButton.addEventListener(
-      "click",
-      () => loadJournal(true)
-    );
-  }
+  refreshButton?.addEventListener(
+    "click",
+    () => loadJournal(true)
+  );
 
   loadJournal(false);
 
@@ -121,54 +103,37 @@
     REFRESH_MS
   );
 
-  async function loadJournal(
-    manual
-  ) {
-    if (isLoading) {
-      return;
-    }
+  async function loadJournal(manual) {
+    if (isLoading) return;
 
     isLoading = true;
 
-    if (
-      manual &&
-      refreshButton
-    ) {
-      refreshButton.disabled =
-        true;
-
-      refreshButton.textContent =
-        "מרענן…";
+    if (manual && refreshButton) {
+      refreshButton.disabled = true;
+      refreshButton.textContent = "מרענן…";
     }
 
     try {
       const endpoint =
-        `${SUPABASE_URL}` +
-        `/rest/v1/journal_entries` +
-        `?select=` +
-        `id,created_at,taken_at,` +
-        `location_name,day_number,` +
-        `caption,image_path` +
-        `&order=` +
-        `taken_at.asc.nullslast,` +
-        `created_at.asc`;
+        `${SUPABASE_URL}/rest/v1/journal_entries` +
+        `?select=id,created_at,taken_at,location_name,day_number,caption,image_path` +
+        `&order=taken_at.asc.nullslast,created_at.asc`;
 
-      const response =
-        await fetch(
-          endpoint,
-          {
-            headers: {
-              apikey:
-                SUPABASE_PUBLISHABLE_KEY,
+      const response = await fetch(
+        endpoint,
+        {
+          headers: {
+            apikey:
+              SUPABASE_PUBLISHABLE_KEY,
 
-              Accept:
-                "application/json",
-            },
+            Accept:
+              "application/json",
+          },
 
-            cache:
-              "no-store",
-          }
-        );
+          cache:
+            "no-store",
+        }
+      );
 
       if (!response.ok) {
         throw new Error(
@@ -180,18 +145,11 @@
         await response.json();
 
       const payload =
-        JSON.stringify(
-          entries
-        );
+        JSON.stringify(entries);
 
-      if (
-        payload !==
-        lastPayload
-      ) {
+      if (payload !== lastPayload) {
         render(entries);
-
-        lastPayload =
-          payload;
+        lastPayload = payload;
       }
     } catch (error) {
       console.error(
@@ -203,102 +161,113 @@
     } finally {
       isLoading = false;
 
-      if (
-        manual &&
-        refreshButton
-      ) {
-        refreshButton.disabled =
-          false;
-
+      if (manual && refreshButton) {
+        refreshButton.disabled = false;
         refreshButton.textContent =
           "רענון עכשיו ↻";
       }
     }
   }
 
-  function render(
-    entries
-  ) {
+  function render(entries) {
+    closeStory();
+
     if (
-      !Array.isArray(
-        entries
-      ) ||
+      !Array.isArray(entries) ||
       entries.length === 0
     ) {
-      preview.className =
-        "journal-live-empty";
-
-      preview.innerHTML = `
-        <div
-          class="journal-empty-orbit"
-          aria-hidden="true"
-        >
-          <span>✦</span>
-          <i></i>
-          <b>60</b>
-        </div>
-
-        <div
-          class="journal-empty-copy"
-        >
-          <small>
-            HAGIT'S USA DIARY ·
-            WAITING FOR PAGE ONE
-          </small>
-
-          <h3 dir="ltr">
-            THE STORY<br>
-            <em>
-              STARTS HERE.
-            </em>
-          </h3>
-
-          <p>
-            הזיכרון הראשון של חגית
-            יופיע כאן ברגע שהיא תשתף
-            תמונה מהאייפון.
-          </p>
-
-          <span
-            class="journal-empty-status"
-          >
-            📸 Waiting for the first memory…
-          </span>
-        </div>
-      `;
-
+      journalGroups = [];
+      renderEmpty();
       return;
     }
 
-    const groups =
-      groupEntries(
-        entries
-      );
+    journalGroups =
+      groupEntries(entries);
 
     preview.className =
-      "journal-live-days";
+      "journal-chapters-grid";
 
     preview.innerHTML =
-      groups
+      journalGroups
         .map(
-          renderGroup
+          (group, groupIndex) =>
+            renderChapter(
+              group,
+              groupIndex
+            )
         )
         .join("");
 
-    bindCarousels();
-    bindLightboxButtons();
+    preview
+      .querySelectorAll(
+        "[data-journal-chapter]"
+      )
+      .forEach(
+        (button) => {
+          button.addEventListener(
+            "click",
+            () => {
+              openStory(
+                Number(
+                  button.dataset
+                    .journalChapter ||
+                    0
+                ),
+                0
+              );
+            }
+          );
+        }
+      );
   }
 
-  function groupEntries(
-    entries
-  ) {
+  function renderEmpty() {
+    preview.className =
+      "journal-live-empty journal-book-empty";
+
+    preview.innerHTML = `
+      <div
+        class="journal-empty-orbit"
+        aria-hidden="true"
+      >
+        <span>✦</span>
+        <i></i>
+        <b>60</b>
+      </div>
+
+      <div
+        class="journal-empty-copy"
+      >
+        <small>
+          HAGIT'S USA DIARY ·
+          WAITING FOR CHAPTER ONE
+        </small>
+
+        <h3 dir="ltr">
+          THE STORY<br>
+          <em>STARTS HERE.</em>
+        </h3>
+
+        <p>
+          ברגע שחגית תשתף את התמונה
+          הראשונה, הפרק הראשון בספר
+          המסע שלה יופיע כאן.
+        </p>
+
+        <span
+          class="journal-empty-status"
+        >
+          📸 Waiting for the first memory…
+        </span>
+      </div>
+    `;
+  }
+
+  function groupEntries(entries) {
     const grouped =
       new Map();
 
-    for (
-      const entry of
-      entries
-    ) {
+    for (const entry of entries) {
       const dateKey =
         getDateKey(
           entry.taken_at ||
@@ -310,11 +279,7 @@
           ? `day-${entry.day_number}`
           : `date-${dateKey}`;
 
-      if (
-        !grouped.has(
-          key
-        )
-      ) {
+      if (!grouped.has(key)) {
         grouped.set(
           key,
           {
@@ -334,9 +299,7 @@
       grouped
         .get(key)
         .entries
-        .push(
-          entry
-        );
+        .push(entry);
     }
 
     return [
@@ -353,15 +316,11 @@
           );
         }
 
-        if (
-          a.dayNumber
-        ) {
+        if (a.dayNumber) {
           return -1;
         }
 
-        if (
-          b.dayNumber
-        ) {
+        if (b.dayNumber) {
           return 1;
         }
 
@@ -374,196 +333,633 @@
     );
   }
 
-  function renderGroup(
-    group
+  function renderChapter(
+    group,
+    groupIndex
   ) {
-    const first =
-      group.entries[0];
+    const meta =
+      chapterMeta(group);
 
-    const date =
-      formatDate(
-        first.taken_at ||
-          first.created_at
+    const images =
+      group.entries
+        .slice(0, 3)
+        .map(
+          (entry) =>
+            publicImageUrl(
+              entry.image_path
+            )
+        );
+
+    const cover =
+      images[0] || "";
+
+    const second =
+      images[1] || cover;
+
+    const third =
+      images[2] ||
+      second ||
+      cover;
+
+    const quote =
+      firstCaption(
+        group.entries
       );
-
-    const label =
-      group.dayNumber
-        ? `DAY ${String(
-            group.dayNumber
-          ).padStart(
-            2,
-            "0"
-          )}`
-        : "MEMORY";
 
     const count =
       group.entries.length;
 
     const countText =
       count === 1
-        ? "זיכרון אחד"
-        : `${count} זיכרונות`;
+        ? "1 MEMORY"
+        : `${count} MEMORIES`;
 
-    const startIndex =
-      Math.min(
-        carouselPositions.get(
-          group.key
-        ) || 0,
-
-        Math.max(
-          count - 1,
-          0
-        )
-      );
+    const dayNumber =
+      group.dayNumber
+        ? String(
+            group.dayNumber
+          ).padStart(
+            2,
+            "0"
+          )
+        : "✦";
 
     return `
-      <section
-        class="journal-day-block"
-        data-carousel-group="${escapeAttr(
-          group.key
+      <button
+        class="journal-chapter-card"
+        type="button"
+        data-journal-chapter="${groupIndex}"
+        aria-label="פתיחת פרק ${escapeAttr(
+          meta.title
         )}"
-        data-start-index="${startIndex}"
       >
-        <header
-          class="journal-day-head"
+        <span
+          class="journal-chapter-stack"
+          aria-hidden="true"
         >
-          <div
-            class="journal-day-title-row"
-          >
-            <span
-              class="journal-day-label"
-            >
-              ${escapeHtml(
-                label
-              )}
-            </span>
 
-            <span
-              class="journal-day-count"
-            >
-              ${escapeHtml(
-                countText
-              )}
-            </span>
-          </div>
-
-          <div
-            class="journal-day-date"
-          >
-            ${escapeHtml(
-              date
-            )}
-          </div>
-        </header>
-
-        <div
-          class="journal-carousel-shell"
-        >
-          <div
-            class="journal-carousel-track"
-            data-carousel-track
-            aria-label="תמונות מהיום הזה"
-          >
-            ${group.entries
-              .map(
-                (
-                  entry,
-                  index
-                ) =>
-                  renderSlide(
-                    entry,
-                    index,
-                    count
-                  )
-              )
-              .join("")}
-          </div>
+          ${
+            count > 2
+              ? `
+                <span
+                  class="
+                    journal-chapter-back
+                    journal-chapter-back-two
+                  "
+                  style="${bgStyle(
+                    third
+                  )}"
+                ></span>
+              `
+              : ""
+          }
 
           ${
             count > 1
               ? `
-                <button
+                <span
                   class="
-                    journal-carousel-arrow
-                    journal-carousel-prev
+                    journal-chapter-back
+                    journal-chapter-back-one
                   "
-                  type="button"
-                  data-carousel-prev
-                  aria-label="לתמונה הקודמת"
-                >
-                  ‹
-                </button>
-
-                <button
-                  class="
-                    journal-carousel-arrow
-                    journal-carousel-next
-                  "
-                  type="button"
-                  data-carousel-next
-                  aria-label="לתמונה הבאה"
-                >
-                  ›
-                </button>
+                  style="${bgStyle(
+                    second
+                  )}"
+                ></span>
               `
               : ""
           }
-        </div>
-
-        <div
-          class="journal-carousel-bottom"
-        >
-          <div
-            class="journal-carousel-dots"
-            data-carousel-dots
-          >
-            ${
-              count > 1
-                ? group.entries
-                    .map(
-                      (
-                        _,
-                        index
-                      ) => `
-                        <button
-                          type="button"
-                          class="
-                            journal-carousel-dot
-                            ${
-                              index ===
-                              startIndex
-                                ? "is-active"
-                                : ""
-                            }
-                          "
-                          data-carousel-dot="${index}"
-                          aria-label="מעבר לתמונה ${
-                            index + 1
-                          }"
-                        ></button>
-                      `
-                    )
-                    .join("")
-                : ""
-            }
-          </div>
 
           <span
-            class="journal-carousel-counter"
-            data-carousel-counter
+            class="journal-chapter-front"
+            style="${bgStyle(
+              cover
+            )}"
           >
-            ${startIndex + 1} / ${count}
+            <span
+              class="journal-chapter-image-shade"
+            ></span>
+
+            <span
+              class="journal-chapter-day"
+            >
+              ${escapeHtml(
+                dayNumber
+              )}
+            </span>
+
+            <span
+              class="journal-chapter-stamp"
+            >
+              <b>H60</b>
+              <small>USA</small>
+            </span>
           </span>
-        </div>
-      </section>
+        </span>
+
+        <span
+          class="journal-chapter-copy"
+        >
+          <span
+            class="journal-chapter-title"
+            dir="ltr"
+          >
+            ${escapeHtml(
+              meta.title
+            )}
+          </span>
+
+          <span
+            class="journal-chapter-date"
+            dir="ltr"
+          >
+            ${escapeHtml(
+              meta.date
+            )}
+          </span>
+
+          <span
+            class="journal-chapter-count"
+            dir="ltr"
+          >
+            ▣
+            ${escapeHtml(
+              countText
+            )}
+          </span>
+
+          ${
+            quote
+              ? `
+                <span
+                  class="journal-chapter-quote"
+                >
+                  ״${escapeHtml(
+                    truncate(
+                      quote,
+                      82
+                    )
+                  )}״
+                </span>
+              `
+              : `
+                <span
+                  class="
+                    journal-chapter-quote
+                    journal-chapter-quote-empty
+                  "
+                >
+                  OPEN CHAPTER →
+                </span>
+              `
+          }
+        </span>
+      </button>
     `;
   }
 
-  function renderSlide(
-    entry,
-    index,
-    count
+  function chapterMeta(group) {
+    if (
+      group.dayNumber &&
+      DAY_META[group.dayNumber]
+    ) {
+      return DAY_META[
+        group.dayNumber
+      ];
+    }
+
+    const first =
+      group.entries[0] ||
+      {};
+
+    return {
+      title:
+        String(
+          first.location_name ||
+            "TRAVEL MEMORY"
+        ).toUpperCase(),
+
+      date:
+        formatDateEnglish(
+          first.taken_at ||
+            first.created_at
+        ),
+    };
+  }
+
+  function firstCaption(entries) {
+    const item =
+      entries.find(
+        (entry) =>
+          String(
+            entry.caption ||
+              ""
+          ).trim()
+      );
+
+    return item
+      ? String(
+          item.caption
+        ).trim()
+      : "";
+  }
+
+  function openStory(
+    groupIndex,
+    entryIndex
   ) {
+    const group =
+      journalGroups[
+        groupIndex
+      ];
+
+    if (
+      !group ||
+      !group.entries.length
+    ) {
+      return;
+    }
+
+    ensureStoryViewer();
+
+    activeGroupIndex =
+      groupIndex;
+
+    activeEntryIndex =
+      Math.max(
+        0,
+        Math.min(
+          entryIndex,
+          group.entries.length -
+            1
+        )
+      );
+
+    const viewer =
+      document.getElementById(
+        "journalStoryViewer"
+      );
+
+    viewer?.classList.add(
+      "is-open"
+    );
+
+    document.body.classList.add(
+      "journal-story-open"
+    );
+
+    updateStory();
+  }
+
+  function closeStory() {
+    document
+      .getElementById(
+        "journalStoryViewer"
+      )
+      ?.classList.remove(
+        "is-open"
+      );
+
+    document.body.classList.remove(
+      "journal-story-open"
+    );
+
+    activeGroupIndex =
+      -1;
+
+    activeEntryIndex =
+      0;
+  }
+
+  function ensureStoryViewer() {
+    if (
+      document.getElementById(
+        "journalStoryViewer"
+      )
+    ) {
+      return;
+    }
+
+    const viewer =
+      document.createElement(
+        "div"
+      );
+
+    viewer.id =
+      "journalStoryViewer";
+
+    viewer.className =
+      "journal-story-viewer";
+
+    viewer.setAttribute(
+      "role",
+      "dialog"
+    );
+
+    viewer.setAttribute(
+      "aria-modal",
+      "true"
+    );
+
+    viewer.innerHTML = `
+      <div
+        class="journal-story-shell"
+      >
+
+        <header
+          class="journal-story-topbar"
+        >
+          <button
+            class="journal-story-back"
+            type="button"
+            data-story-close
+          >
+            ← חזרה לפרקים
+          </button>
+
+          <div
+            class="journal-story-heading"
+            dir="ltr"
+          >
+            <strong
+              data-story-title
+            ></strong>
+
+            <small
+              data-story-date
+            ></small>
+          </div>
+
+          <span
+            class="journal-story-counter"
+            data-story-counter
+          ></span>
+        </header>
+
+        <div
+          class="journal-story-stage"
+          data-story-stage
+        >
+          <div
+            class="journal-story-bg"
+            data-story-bg
+          ></div>
+
+          <img
+            class="journal-story-image"
+            data-story-image
+            alt="זיכרון מיומן המסע של חגית"
+          >
+
+          <div
+            class="journal-story-vignette"
+          ></div>
+
+          <button
+            class="
+              journal-story-arrow
+              journal-story-prev
+            "
+            type="button"
+            data-story-prev
+            aria-label="תמונה קודמת"
+          >
+            ‹
+          </button>
+
+          <button
+            class="
+              journal-story-arrow
+              journal-story-next
+            "
+            type="button"
+            data-story-next
+            aria-label="תמונה הבאה"
+          >
+            ›
+          </button>
+
+          <div
+            class="journal-story-copy"
+            dir="rtl"
+          >
+            <div
+              class="journal-story-meta"
+              data-story-meta
+            ></div>
+
+            <blockquote
+              data-story-caption
+            ></blockquote>
+          </div>
+        </div>
+
+        <div
+          class="journal-story-thumbs"
+          data-story-thumbs
+        ></div>
+
+      </div>
+    `;
+
+    document.body.appendChild(
+      viewer
+    );
+
+    viewer
+      .querySelector(
+        "[data-story-close]"
+      )
+      ?.addEventListener(
+        "click",
+        closeStory
+      );
+
+    viewer
+      .querySelector(
+        "[data-story-prev]"
+      )
+      ?.addEventListener(
+        "click",
+        () =>
+          stepStory(-1)
+      );
+
+    viewer
+      .querySelector(
+        "[data-story-next]"
+      )
+      ?.addEventListener(
+        "click",
+        () =>
+          stepStory(1)
+      );
+
+    viewer.addEventListener(
+      "click",
+      (event) => {
+        if (
+          event.target ===
+          viewer
+        ) {
+          closeStory();
+        }
+      }
+    );
+
+    const stage =
+      viewer.querySelector(
+        "[data-story-stage]"
+      );
+
+    stage?.addEventListener(
+      "touchstart",
+      (event) => {
+        storyTouchStartX =
+          event
+            .changedTouches?.[0]
+            ?.clientX ??
+          null;
+      },
+      {
+        passive: true,
+      }
+    );
+
+    stage?.addEventListener(
+      "touchend",
+      (event) => {
+        if (
+          storyTouchStartX ===
+          null
+        ) {
+          return;
+        }
+
+        const endX =
+          event
+            .changedTouches?.[0]
+            ?.clientX ??
+          storyTouchStartX;
+
+        const delta =
+          endX -
+          storyTouchStartX;
+
+        storyTouchStartX =
+          null;
+
+        if (
+          Math.abs(delta) <
+          45
+        ) {
+          return;
+        }
+
+        stepStory(
+          delta < 0
+            ? 1
+            : -1
+        );
+      },
+      {
+        passive: true,
+      }
+    );
+
+    document.addEventListener(
+      "keydown",
+      (event) => {
+        if (
+          !document
+            .getElementById(
+              "journalStoryViewer"
+            )
+            ?.classList.contains(
+              "is-open"
+            )
+        ) {
+          return;
+        }
+
+        if (
+          event.key ===
+          "Escape"
+        ) {
+          closeStory();
+        }
+
+        if (
+          event.key ===
+          "ArrowLeft"
+        ) {
+          stepStory(-1);
+        }
+
+        if (
+          event.key ===
+          "ArrowRight"
+        ) {
+          stepStory(1);
+        }
+      }
+    );
+  }
+
+  function stepStory(direction) {
+    const group =
+      journalGroups[
+        activeGroupIndex
+      ];
+
+    if (!group) {
+      return;
+    }
+
+    const nextIndex =
+      activeEntryIndex +
+      direction;
+
+    if (
+      nextIndex < 0 ||
+      nextIndex >=
+        group.entries.length
+    ) {
+      return;
+    }
+
+    activeEntryIndex =
+      nextIndex;
+
+    updateStory();
+  }
+
+  function updateStory() {
+    const viewer =
+      document.getElementById(
+        "journalStoryViewer"
+      );
+
+    const group =
+      journalGroups[
+        activeGroupIndex
+      ];
+
+    if (
+      !viewer ||
+      !group
+    ) {
+      return;
+    }
+
+    const entry =
+      group.entries[
+        activeEntryIndex
+      ];
+
+    const meta =
+      chapterMeta(group);
+
     const imageUrl =
       publicImageUrl(
         entry.image_path
@@ -587,407 +983,226 @@
           entry.created_at
       );
 
-    const meta =
-      [
-        location,
-        dateTime,
-      ]
-        .filter(
-          Boolean
-        )
-        .join(" · ");
+    const titleEl =
+      viewer.querySelector(
+        "[data-story-title]"
+      );
 
-    return `
-      <article
-        class="journal-carousel-slide"
-        data-carousel-slide
-        aria-label="תמונה ${
-          index + 1
-        } מתוך ${count}"
-      >
-        <button
-          class="journal-slide-photo"
-          type="button"
-          data-journal-image
-          data-src="${escapeAttr(
-            imageUrl
-          )}"
-          data-caption="${escapeAttr(
-            caption
-          )}"
-          data-meta="${escapeAttr(
-            meta
-          )}"
-          aria-label="פתיחת התמונה במסך מלא"
-        >
-          <img
-            class="journal-photo-blur"
-            src="${escapeAttr(
-              imageUrl
-            )}"
-            alt=""
-            aria-hidden="true"
-          >
+    const dateEl =
+      viewer.querySelector(
+        "[data-story-date]"
+      );
 
-          <img
-            class="journal-photo-main"
-            src="${escapeAttr(
-              imageUrl
-            )}"
-            alt="${escapeAttr(
-              caption ||
-                location ||
-                "זיכרון מהטיול של חגית"
-            )}"
-            loading="lazy"
-          >
+    const counterEl =
+      viewer.querySelector(
+        "[data-story-counter]"
+      );
 
-          <span
-            class="journal-photo-shade"
-          ></span>
+    const imageEl =
+      viewer.querySelector(
+        "[data-story-image]"
+      );
 
-          <span
-            class="journal-photo-open"
-          >
-            ↗
-          </span>
-        </button>
+    const bgEl =
+      viewer.querySelector(
+        "[data-story-bg]"
+      );
 
-        <div
-          class="journal-slide-copy"
-          dir="rtl"
-        >
-          <div
-            class="journal-memory-meta"
-          >
-            ${
-              location
-                ? `
-                  <span
-                    class="journal-location"
-                  >
-                    📍
-                    ${escapeHtml(
-                      location
-                    )}
-                  </span>
-                `
-                : ""
-            }
+    const metaEl =
+      viewer.querySelector(
+        "[data-story-meta]"
+      );
 
-            ${
-              dateTime
-                ? `
-                  <span>
-                    🕒
-                    ${escapeHtml(
-                      dateTime
-                    )}
-                  </span>
-                `
-                : ""
-            }
-          </div>
+    const captionEl =
+      viewer.querySelector(
+        "[data-story-caption]"
+      );
 
-          <p
-            class="
-              journal-memory-caption
-              ${
-                caption
-                  ? ""
-                  : "journal-memory-caption-empty"
-              }
-            "
-          >
-            ${
-              caption
-                ? `״${escapeHtml(
-                    caption
-                  )}״`
-                : "רגע ששווה לשמור."
-            }
-          </p>
-        </div>
-      </article>
-    `;
-  }
+    const thumbsEl =
+      viewer.querySelector(
+        "[data-story-thumbs]"
+      );
 
-  function bindCarousels() {
-    preview
-      .querySelectorAll(
-        "[data-carousel-group]"
-      )
-      .forEach(
-        (
-          groupEl
-        ) => {
-          const key =
-            groupEl.dataset
-              .carouselGroup ||
-            "";
+    const prev =
+      viewer.querySelector(
+        "[data-story-prev]"
+      );
 
-          const track =
-            groupEl.querySelector(
-              "[data-carousel-track]"
-            );
+    const next =
+      viewer.querySelector(
+        "[data-story-next]"
+      );
 
-          const slides =
-            [
-              ...groupEl.querySelectorAll(
-                "[data-carousel-slide]"
-              ),
-            ];
+    if (titleEl) {
+      titleEl.textContent =
+        meta.title;
+    }
 
-          const prev =
-            groupEl.querySelector(
-              "[data-carousel-prev]"
-            );
+    if (dateEl) {
+      dateEl.textContent =
+        meta.date;
+    }
 
-          const next =
-            groupEl.querySelector(
-              "[data-carousel-next]"
-            );
+    if (counterEl) {
+      counterEl.textContent =
+        `${activeEntryIndex + 1} / ${group.entries.length}`;
+    }
 
-          const counter =
-            groupEl.querySelector(
-              "[data-carousel-counter]"
-            );
+    if (imageEl) {
+      imageEl.src =
+        imageUrl;
 
-          const dots =
-            [
-              ...groupEl.querySelectorAll(
-                "[data-carousel-dot]"
-              ),
-            ];
+      imageEl.alt =
+        caption ||
+        location ||
+        `זיכרון ${
+          activeEntryIndex +
+          1
+        }`;
+    }
 
-          if (
-            !track ||
-            slides.length === 0
-          ) {
-            return;
-          }
+    if (bgEl) {
+      bgEl.style.backgroundImage =
+        `url("${imageUrl}")`;
+    }
 
-          let index =
-            Math.min(
-              Number(
-                groupEl.dataset
-                  .startIndex ||
-                  0
-              ),
+    if (metaEl) {
+      metaEl.innerHTML =
+        [
+          location
+            ? `
+              <span>
+                📍
+                ${escapeHtml(
+                  location
+                )}
+              </span>
+            `
+            : "",
 
-              slides.length -
-                1
-            );
+          dateTime
+            ? `
+              <span>
+                🕒
+                ${escapeHtml(
+                  dateTime
+                )}
+              </span>
+            `
+            : "",
+        ]
+          .filter(Boolean)
+          .join("");
+    }
 
-          let raf = 0;
+    if (captionEl) {
+      captionEl.textContent =
+        caption
+          ? `״${caption}״`
+          : "רגע ששווה לשמור.";
 
-          const updateUi =
+      captionEl.classList.toggle(
+        "is-empty",
+        !caption
+      );
+    }
+
+    if (prev) {
+      prev.disabled =
+        activeEntryIndex ===
+        0;
+    }
+
+    if (next) {
+      next.disabled =
+        activeEntryIndex ===
+        group.entries.length -
+        1;
+    }
+
+    if (thumbsEl) {
+      thumbsEl.innerHTML =
+        group.entries
+          .map(
             (
-              nextIndex
+              thumbEntry,
+              index
             ) => {
-              index =
-                Math.max(
-                  0,
-                  Math.min(
-                    nextIndex,
-                    slides.length -
-                      1
-                  )
+              const thumbUrl =
+                publicImageUrl(
+                  thumbEntry.image_path
                 );
 
-              carouselPositions.set(
-                key,
-                index
-              );
-
-              if (
-                counter
-              ) {
-                counter.textContent =
-                  `${index + 1} / ${slides.length}`;
-              }
-
-              dots.forEach(
-                (
-                  dot,
-                  dotIndex
-                ) => {
-                  dot.classList.toggle(
-                    "is-active",
-                    dotIndex ===
-                      index
-                  );
-                }
-              );
-
-              if (prev) {
-                prev.disabled =
-                  index === 0;
-              }
-
-              if (next) {
-                next.disabled =
-                  index ===
-                  slides.length -
-                    1;
-              }
-            };
-
-          const goTo =
-            (
-              nextIndex,
-              behavior =
-                "smooth"
-            ) => {
-              const safeIndex =
-                Math.max(
-                  0,
-                  Math.min(
-                    nextIndex,
-                    slides.length -
-                      1
-                  )
-                );
-
-              track.scrollTo(
-                {
-                  left:
-                    safeIndex *
-                    track.clientWidth,
-
-                  behavior,
-                }
-              );
-
-              updateUi(
-                safeIndex
-              );
-            };
-
-          if (prev) {
-            prev.addEventListener(
-              "click",
-              () =>
-                goTo(
-                  index - 1
-                )
-            );
-          }
-
-          if (next) {
-            next.addEventListener(
-              "click",
-              () =>
-                goTo(
-                  index + 1
-                )
-            );
-          }
-
-          dots.forEach(
-            (dot) => {
-              dot.addEventListener(
-                "click",
-                () => {
-                  goTo(
-                    Number(
-                      dot.dataset
-                        .carouselDot ||
-                        0
-                    )
-                  );
-                }
-              );
-            }
-          );
-
-          track.addEventListener(
-            "scroll",
-            () => {
-              cancelAnimationFrame(
-                raf
-              );
-
-              raf =
-                requestAnimationFrame(
-                  () => {
-                    if (
-                      !track.clientWidth
-                    ) {
-                      return;
+              return `
+                <button
+                  class="
+                    journal-story-thumb
+                    ${
+                      index ===
+                      activeEntryIndex
+                        ? "is-active"
+                        : ""
                     }
-
-                    const visibleIndex =
-                      Math.round(
-                        track.scrollLeft /
-                          track.clientWidth
-                      );
-
-                    updateUi(
-                      visibleIndex
-                    );
-                  }
-                );
-            },
-            {
-              passive: true,
+                  "
+                  type="button"
+                  data-story-thumb="${index}"
+                  aria-label="מעבר לתמונה ${
+                    index + 1
+                  }"
+                >
+                  <img
+                    src="${escapeAttr(
+                      thumbUrl
+                    )}"
+                    alt=""
+                    loading="lazy"
+                  >
+                </button>
+              `;
             }
-          );
+          )
+          .join("");
 
-          window.addEventListener(
-            "resize",
-            debounce(
-              () =>
-                goTo(
-                  index,
-                  "auto"
-                ),
-              120
-            )
-          );
+      thumbsEl
+        .querySelectorAll(
+          "[data-story-thumb]"
+        )
+        .forEach(
+          (button) => {
+            button.addEventListener(
+              "click",
+              () => {
+                activeEntryIndex =
+                  Number(
+                    button.dataset
+                      .storyThumb ||
+                      0
+                  );
 
-          requestAnimationFrame(
-            () =>
-              goTo(
-                index,
-                "auto"
-              )
-          );
+                updateStory();
+              }
+            );
+          }
+        );
 
-          updateUi(index);
+      const activeThumb =
+        thumbsEl.querySelector(
+          ".journal-story-thumb.is-active"
+        );
+
+      activeThumb?.scrollIntoView(
+        {
+          behavior:
+            "smooth",
+
+          inline:
+            "center",
+
+          block:
+            "nearest",
         }
       );
-  }
-
-  function bindLightboxButtons() {
-    preview
-      .querySelectorAll(
-        "[data-journal-image]"
-      )
-      .forEach(
-        (
-          button
-        ) => {
-          button.addEventListener(
-            "click",
-            () => {
-              openLightbox(
-                button.dataset
-                  .src ||
-                  "",
-
-                button.dataset
-                  .caption ||
-                  "",
-
-                button.dataset
-                  .meta ||
-                  ""
-              );
-            }
-          );
-        }
-      );
+    }
   }
 
   function renderError() {
@@ -1011,8 +1226,7 @@
 
         <p>
           היומן לא הצליח להיטען כרגע.
-          התמונות עצמן נשארות
-          שמורות בענן.
+          התמונות עצמן נשארות שמורות בענן.
         </p>
 
         <button
@@ -1025,23 +1239,18 @@
       </div>
     `;
 
-    const retry =
-      document.getElementById(
+    document
+      .getElementById(
         "journalRetryBtn"
-      );
-
-    if (retry) {
-      retry.addEventListener(
+      )
+      ?.addEventListener(
         "click",
         () =>
           loadJournal(true)
       );
-    }
   }
 
-  function publicImageUrl(
-    path
-  ) {
+  function publicImageUrl(path) {
     const encodedPath =
       String(
         path ||
@@ -1061,9 +1270,16 @@
     );
   }
 
-  function getDateKey(
-    value
-  ) {
+  function bgStyle(url) {
+    return (
+      `background-image:` +
+      `url('${escapeAttr(
+        url
+      )}')`
+    );
+  }
+
+  function getDateKey(value) {
     if (!value) {
       return "9999-99-99";
     }
@@ -1104,44 +1320,7 @@
     ].join("-");
   }
 
-  function formatDate(
-    value
-  ) {
-    if (!value) {
-      return "";
-    }
-
-    const date =
-      new Date(value);
-
-    if (
-      Number.isNaN(
-        date.getTime()
-      )
-    ) {
-      return "";
-    }
-
-    return new Intl
-      .DateTimeFormat(
-        "he-IL",
-        {
-          day:
-            "2-digit",
-
-          month:
-            "2-digit",
-
-          year:
-            "numeric",
-        }
-      )
-      .format(date);
-  }
-
-  function formatDateTime(
-    value
-  ) {
+  function formatDateTime(value) {
     if (!value) {
       return "";
     }
@@ -1180,168 +1359,38 @@
       .format(date);
   }
 
-  function openLightbox(
-    src,
-    caption,
-    meta
-  ) {
-    if (!src) {
-      return;
+  function formatDateEnglish(value) {
+    if (!value) {
+      return "MEMORY";
     }
 
-    let lightbox =
-      document.getElementById(
-        "journalLightbox"
-      );
+    const date =
+      new Date(value);
 
-    if (!lightbox) {
-      lightbox =
-        document.createElement(
-          "div"
-        );
+    if (
+      Number.isNaN(
+        date.getTime()
+      )
+    ) {
+      return "MEMORY";
+    }
 
-      lightbox.id =
-        "journalLightbox";
+    return new Intl
+      .DateTimeFormat(
+        "en-GB",
+        {
+          day:
+            "2-digit",
 
-      lightbox.className =
-        "journal-lightbox";
+          month:
+            "short",
 
-      lightbox.setAttribute(
-        "role",
-        "dialog"
-      );
-
-      lightbox.setAttribute(
-        "aria-modal",
-        "true"
-      );
-
-      lightbox.innerHTML = `
-        <button
-          type="button"
-          class="journal-lightbox-close"
-          aria-label="סגירה"
-        >
-          ×
-        </button>
-
-        <div
-          class="journal-lightbox-inner"
-        >
-          <img
-            alt="תמונה מיומן המסע של חגית"
-          >
-
-          <div
-            class="journal-lightbox-copy"
-            dir="rtl"
-          >
-            <p></p>
-            <small></small>
-          </div>
-        </div>
-      `;
-
-      document.body.appendChild(
-        lightbox
-      );
-
-      const closeButton =
-        lightbox.querySelector(
-          ".journal-lightbox-close"
-        );
-
-      if (closeButton) {
-        closeButton.addEventListener(
-          "click",
-          closeLightbox
-        );
-      }
-
-      lightbox.addEventListener(
-        "click",
-        (
-          event
-        ) => {
-          if (
-            event.target ===
-            lightbox
-          ) {
-            closeLightbox();
-          }
+          year:
+            "numeric",
         }
-      );
-
-      document.addEventListener(
-        "keydown",
-        (
-          event
-        ) => {
-          if (
-            event.key ===
-            "Escape"
-          ) {
-            closeLightbox();
-          }
-        }
-      );
-    }
-
-    const image =
-      lightbox.querySelector(
-        "img"
-      );
-
-    const captionEl =
-      lightbox.querySelector(
-        "p"
-      );
-
-    const metaEl =
-      lightbox.querySelector(
-        "small"
-      );
-
-    if (image) {
-      image.src = src;
-    }
-
-    if (captionEl) {
-      captionEl.textContent =
-        caption
-          ? `״${caption}״`
-          : "";
-    }
-
-    if (metaEl) {
-      metaEl.textContent =
-        meta;
-    }
-
-    lightbox.classList.add(
-      "is-open"
-    );
-
-    document.body.classList.add(
-      "journal-lightbox-open"
-    );
-  }
-
-  function closeLightbox() {
-    const lightbox =
-      document.getElementById(
-        "journalLightbox"
-      );
-
-    if (lightbox) {
-      lightbox.classList.remove(
-        "is-open"
-      );
-    }
-
-    document.body.classList.remove(
-      "journal-lightbox-open"
-    );
+      )
+      .format(date)
+      .toUpperCase();
   }
 
   function preparePageNavigation() {
@@ -1363,27 +1412,6 @@
           window.location.search
       );
     }
-
-    const forceTop =
-      () => {
-        window.scrollTo({
-          top: 0,
-          left: 0,
-          behavior:
-            "auto",
-        });
-      };
-
-    forceTop();
-
-    requestAnimationFrame(
-      forceTop
-    );
-
-    setTimeout(
-      forceTop,
-      80
-    );
   }
 
   function installMobileNavigation() {
@@ -1423,21 +1451,10 @@
       "ניווט באתר"
     );
 
-    const homeLink = `
-      <a
-        href="#top"
-        data-mobile-nav-link
-      >
-        ראשי
-      </a>
-    `;
-
-    const clonedLinks =
+    const links =
       desktopLinks
         .map(
-          (
-            link
-          ) => {
+          (link) => {
             const href =
               link.getAttribute(
                 "href"
@@ -1468,8 +1485,14 @@
       <div
         class="hagit-mobile-nav-track"
       >
-        ${homeLink}
-        ${clonedLinks}
+        <a
+          href="#top"
+          data-mobile-nav-link
+        >
+          ראשי
+        </a>
+
+        ${links}
       </div>
     `;
 
@@ -1481,9 +1504,7 @@
   function bindAnchorNavigation() {
     document.addEventListener(
       "click",
-      (
-        event
-      ) => {
+      (event) => {
         const anchor =
           event.target.closest(
             "a[href^='#']"
@@ -1534,16 +1555,18 @@
           navHeight -
           12;
 
-        window.scrollTo({
-          top:
-            Math.max(
-              0,
-              top
-            ),
+        window.scrollTo(
+          {
+            top:
+              Math.max(
+                0,
+                top
+              ),
 
-          behavior:
-            "smooth",
-        });
+            behavior:
+              "smooth",
+          }
+        );
 
         history.replaceState(
           null,
@@ -1556,7 +1579,16 @@
   }
 
   function observeSections() {
-    const targetIds = [
+    if (
+      !(
+        "IntersectionObserver"
+        in window
+      )
+    ) {
+      return;
+    }
+
+    const ids = [
       "top",
       "route",
       "journal",
@@ -1567,48 +1599,31 @@
       "packing",
     ];
 
-    const targets =
-      targetIds
+    const sections =
+      ids
         .map(
-          (
-            id
-          ) =>
+          (id) =>
             document.getElementById(
               id
             )
         )
-        .filter(
-          Boolean
-        );
+        .filter(Boolean);
 
-    if (
-      !(
-        "IntersectionObserver"
-        in window
-      ) ||
-      targets.length === 0
-    ) {
+    if (!sections.length) {
       return;
     }
 
     const observer =
       new IntersectionObserver(
-        (
-          entries
-        ) => {
+        (entries) => {
           const visible =
             entries
               .filter(
-                (
-                  entry
-                ) =>
+                (entry) =>
                   entry.isIntersecting
               )
               .sort(
-                (
-                  a,
-                  b
-                ) =>
+                (a, b) =>
                   b.intersectionRatio -
                   a.intersectionRatio
               )[0];
@@ -1617,42 +1632,46 @@
             return;
           }
 
-          const id =
+          const activeId =
             visible.target.id;
 
-          const links =
-            [
-              ...document.querySelectorAll(
-                "[data-mobile-nav-link]"
-              ),
-            ];
+          document
+            .querySelectorAll(
+              "[data-mobile-nav-link]"
+            )
+            .forEach(
+              (link) => {
+                const active =
+                  link.getAttribute(
+                    "href"
+                  ) ===
+                  `#${activeId}`;
 
-          links.forEach(
-            (
-              link
-            ) => {
-              const active =
-                link.getAttribute(
-                  "href"
-                ) ===
-                `#${id}`;
-
-              link.classList.toggle(
-                "is-active",
-                active
-              );
-
-              if (
-                active &&
-                window.innerWidth <=
-                  900
-              ) {
-                centerMobileLink(
-                  link
+                link.classList.toggle(
+                  "is-active",
+                  active
                 );
+
+                if (
+                  active &&
+                  window.innerWidth <=
+                    900
+                ) {
+                  link.scrollIntoView(
+                    {
+                      behavior:
+                        "smooth",
+
+                      inline:
+                        "center",
+
+                      block:
+                        "nearest",
+                    }
+                  );
+                }
               }
-            }
-          );
+            );
         },
 
         {
@@ -1667,59 +1686,20 @@
         }
       );
 
-    targets.forEach(
-      (
-        target
-      ) =>
+    sections.forEach(
+      (section) =>
         observer.observe(
-          target
+          section
         )
     );
   }
 
-  function centerMobileLink(
-    link
-  ) {
-    const track =
-      link.closest(
-        ".hagit-mobile-nav-track"
-      );
-
-    if (!track) {
-      return;
-    }
-
-    const linkCenter =
-      link.offsetLeft +
-      link.offsetWidth /
-        2;
-
-    const targetLeft =
-      linkCenter -
-      track.clientWidth /
-        2;
-
-    track.scrollTo({
-      left:
-        Math.max(
-          0,
-          targetLeft
-        ),
-
-      behavior:
-        "smooth",
-    });
-  }
-
   function injectStyles() {
-    const previousStyle =
-      document.getElementById(
+    document
+      .getElementById(
         "hagitJournalLiveStyles"
-      );
-
-    if (previousStyle) {
-      previousStyle.remove();
-    }
+      )
+      ?.remove();
 
     const style =
       document.createElement(
@@ -1730,224 +1710,35 @@
       "hagitJournalLiveStyles";
 
     style.textContent = `
+
       /*
-        ====================================
-        HAGIT 60 — LIVE JOURNAL CAROUSEL
-        ====================================
+        ======================================
+        HAGIT 60
+        20 CHAPTERS · ONE JOURNEY
+        ======================================
       */
 
-      .journal-live-days {
-        display: grid !important;
-        grid-template-columns: 1fr !important;
-        gap: 28px !important;
-      }
+      .journal-chapters-grid {
+        display:
+          grid !important;
 
-      .journal-day-block {
-        overflow: hidden;
-        border:
-          1px solid
-          rgba(
-            224,
-            195,
-            255,
-            .14
-          );
-
-        border-radius:
-          24px;
-
-        background:
-          radial-gradient(
-            circle at 82% 10%,
-            rgba(
-              174,
-              89,
-              255,
-              .12
-            ),
-            transparent 32%
-          ),
-          linear-gradient(
-            145deg,
-            rgba(
-              22,
-              11,
-              39,
-              .94
-            ),
-            rgba(
-              8,
-              5,
-              16,
-              .96
+        grid-template-columns:
+          repeat(
+            4,
+            minmax(
+              0,
+              1fr
             )
-          );
+          ) !important;
 
-        box-shadow:
-          0 28px 90px
-          rgba(
-            2,
-            0,
-            10,
-            .35
-          );
-      }
+        gap:
+          24px !important;
 
-      .journal-day-head {
-        display: flex;
-        align-items: end;
-        justify-content:
-          space-between;
-        gap: 18px;
-
-        padding:
-          18px
-          20px
-          14px;
-
-        border-bottom:
-          1px solid
-          rgba(
-            222,
-            190,
-            255,
-            .10
-          );
-      }
-
-      .journal-day-title-row {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-      }
-
-      .journal-day-label {
-        font-family:
-          "Montserrat",
-          sans-serif;
-
-        font-size:
-          12px;
-
-        letter-spacing:
-          .22em;
-
-        color:
-          #e0c8ff;
-      }
-
-      .journal-day-count {
-        padding:
-          5px
-          9px;
-
-        border-radius:
-          999px;
-
-        border:
-          1px solid
-          rgba(
-            219,
-            185,
-            255,
-            .14
-          );
-
-        color:
-          #a99bb6;
-
-        font-size:
-          10px;
-      }
-
-      .journal-day-date {
-        color:
-          #9d8eaa;
-
-        font-family:
-          "Montserrat",
-          sans-serif;
-
-        font-size:
-          10px;
-
-        letter-spacing:
-          .08em;
-
-        white-space:
-          nowrap;
-      }
-
-      .journal-carousel-shell {
-        position:
-          relative;
-
-        overflow:
-          hidden;
-      }
-
-      .journal-carousel-track {
-        direction:
-          ltr;
-
-        display:
-          flex;
-
-        width:
-          100%;
-
-        overflow-x:
-          auto;
-
-        overflow-y:
-          hidden;
-
-        scroll-snap-type:
-          x mandatory;
-
-        scroll-behavior:
-          smooth;
-
-        scrollbar-width:
-          none;
-
-        -ms-overflow-style:
-          none;
-
-        overscroll-behavior-inline:
-          contain;
-
-        touch-action:
-          pan-x pan-y;
-      }
-
-      .journal-carousel-track::-webkit-scrollbar {
-        display:
-          none;
-      }
-
-      .journal-carousel-slide {
-        direction:
-          rtl;
-
-        flex:
-          0 0 100%;
-
-        width:
-          100%;
-
-        min-width:
-          100%;
-
-        scroll-snap-align:
+        align-items:
           start;
-
-        scroll-snap-stop:
-          always;
       }
 
-      .journal-slide-photo {
+      .journal-chapter-card {
         position:
           relative;
 
@@ -1957,85 +1748,154 @@
         width:
           100%;
 
-        height:
-          clamp(
-            390px,
-            52vw,
-            620px
+        padding:
+          11px
+          8px
+          8px;
+
+        border:
+          0;
+
+        background:
+          transparent;
+
+        color:
+          white;
+
+        text-align:
+          inherit;
+
+        overflow:
+          visible;
+
+        isolation:
+          isolate;
+      }
+
+      .journal-chapter-stack {
+        position:
+          relative;
+
+        display:
+          block;
+
+        aspect-ratio:
+          .72;
+
+        margin-bottom:
+          12px;
+      }
+
+      .journal-chapter-front,
+      .journal-chapter-back {
+        position:
+          absolute;
+
+        inset:
+          0;
+
+        display:
+          block;
+
+        border-radius:
+          15px;
+
+        background-position:
+          center;
+
+        background-size:
+          cover;
+
+        background-color:
+          #120b19;
+
+        box-shadow:
+          0 24px 70px
+          rgba(
+            0,
+            0,
+            0,
+            .46
           );
 
-        padding:
-          0;
+        transition:
+          .32s transform,
+          .32s border-color,
+          .32s filter;
+      }
+
+      .journal-chapter-back {
+        border:
+          1px solid
+          rgba(
+            228,
+            205,
+            255,
+            .15
+          );
+
+        filter:
+          saturate(.72)
+          brightness(.72);
+      }
+
+      .journal-chapter-back-one {
+        z-index:
+          -1;
+
+        transform:
+          translate(
+            9px,
+            -6px
+          )
+          rotate(
+            3.4deg
+          )
+          scale(
+            .965
+          );
+      }
+
+      .journal-chapter-back-two {
+        z-index:
+          -2;
+
+        transform:
+          translate(
+            -9px,
+            -2px
+          )
+          rotate(
+            -3.2deg
+          )
+          scale(
+            .94
+          );
+      }
+
+      .journal-chapter-front {
+        z-index:
+          2;
 
         overflow:
           hidden;
 
         border:
-          0;
-
-        border-radius:
-          0;
-
-        background:
-          #07040d;
-
-        color:
-          white;
-      }
-
-      .journal-photo-blur,
-      .journal-photo-main {
-        position:
-          absolute;
-
-        inset:
-          0;
-
-        width:
-          100%;
-
-        height:
-          100%;
-      }
-
-      .journal-photo-blur {
-        object-fit:
-          cover;
-
-        transform:
-          scale(
-            1.08
+          1px solid
+          rgba(
+            229,
+            205,
+            255,
+            .17
           );
-
-        filter:
-          blur(28px)
-          saturate(.72)
-          brightness(.42);
-
-        opacity:
-          .82;
       }
 
-      .journal-photo-main {
-        object-fit:
-          contain;
-
-        z-index:
-          2;
-      }
-
-      .journal-photo-shade {
+      .journal-chapter-image-shade {
         position:
           absolute;
 
-        z-index:
-          3;
-
         inset:
           0;
-
-        pointer-events:
-          none;
 
         background:
           linear-gradient(
@@ -2043,24 +1903,94 @@
             rgba(
               4,
               2,
-              8,
-              .48
-            ),
-            transparent 28%
-          ),
-          linear-gradient(
-            to bottom,
+              7,
+              .96
+            )
+            0%,
+
             rgba(
               4,
               2,
-              8,
-              .16
+              7,
+              .62
+            )
+            27%,
+
+            rgba(
+              4,
+              2,
+              7,
+              .05
+            )
+            62%,
+
+            rgba(
+              4,
+              2,
+              7,
+              .18
+            )
+            100%
+          ),
+
+          linear-gradient(
+            120deg,
+            rgba(
+              121,
+              58,
+              183,
+              .08
             ),
-            transparent 20%
+            transparent
+            48%
           );
       }
 
-      .journal-photo-open {
+      .journal-chapter-day {
+        position:
+          absolute;
+
+        z-index:
+          4;
+
+        top:
+          8px;
+
+        left:
+          12px;
+
+        font:
+          300
+          clamp(
+            56px,
+            5.2vw,
+            82px
+          )/1
+          "Montserrat",
+          sans-serif;
+
+        letter-spacing:
+          -.08em;
+
+        color:
+          rgba(
+            247,
+            239,
+            255,
+            .32
+          );
+
+        text-shadow:
+          0 1px 18px
+          rgba(
+            0,
+            0,
+            0,
+            .22
+          );
+      }
+
+      .journal-chapter-stamp {
         position:
           absolute;
 
@@ -2070,395 +2000,318 @@
         top:
           14px;
 
-        left:
+        right:
           14px;
 
         width:
-          34px;
+          51px;
 
         height:
-          34px;
+          51px;
 
         display:
           grid;
 
-        place-items:
+        place-content:
           center;
+
+        gap:
+          0;
 
         border:
           1px solid
           rgba(
-            255,
-            255,
-            255,
-            .22
+            246,
+            215,
+            157,
+            .65
           );
 
         border-radius:
           50%;
 
+        color:
+          #f5d8a4;
+
+        transform:
+          rotate(
+            8deg
+          );
+
         background:
           rgba(
-            8,
-            5,
-            14,
-            .44
+            10,
+            6,
+            15,
+            .28
           );
 
         backdrop-filter:
           blur(
-            12px
+            8px
           );
 
         -webkit-backdrop-filter:
           blur(
-            12px
-          );
-
-        font-size:
-          15px;
-      }
-
-      .journal-slide-copy {
-        min-height:
-          126px;
-
-        padding:
-          18px
-          20px
-          22px;
-
-        background:
-          linear-gradient(
-            180deg,
-            rgba(
-              20,
-              10,
-              34,
-              .96
-            ),
-            rgba(
-              12,
-              7,
-              22,
-              .98
-            )
+            8px
           );
       }
 
-      .journal-memory-meta {
-        display:
-          flex;
+      .journal-chapter-stamp:before {
+        content:
+          "";
 
-        gap:
-          8px;
+        position:
+          absolute;
 
-        align-items:
-          center;
-
-        flex-wrap:
-          wrap;
-
-        color:
-          #ac9ab8;
-
-        font-size:
-          11px;
-      }
-
-      .journal-memory-meta span {
-        padding:
-          6px
-          9px;
+        inset:
+          4px;
 
         border:
-          1px solid
+          1px dashed
           rgba(
-            219,
-            186,
-            255,
-            .11
+            246,
+            215,
+            157,
+            .38
           );
 
         border-radius:
-          999px;
-
-        background:
-          rgba(
-            255,
-            255,
-            255,
-            .025
-          );
+          50%;
       }
 
-      .journal-location {
-        color:
-          #d9c2e8;
+      .journal-chapter-stamp b,
+      .journal-chapter-stamp small {
+        position:
+          relative;
+
+        z-index:
+          2;
+
+        text-align:
+          center;
       }
 
-      .journal-memory-caption {
-        margin:
-          14px 0 0;
-
-        color:
-          #f3eaf8;
-
-        font-family:
-          "Heebo",
+      .journal-chapter-stamp b {
+        font:
+          600
+          10px
+          "Montserrat",
           sans-serif;
 
-        font-size:
-          clamp(
-            17px,
-            2vw,
-            22px
-          );
-
-        line-height:
-          1.55;
-
-        font-weight:
-          300;
+        letter-spacing:
+          .08em;
       }
 
-      .journal-memory-caption-empty {
-        color:
-          #9d8fa6;
+      .journal-chapter-stamp small {
+        font:
+          500
+          7px
+          "Montserrat",
+          sans-serif;
 
-        font-style:
-          italic;
+        letter-spacing:
+          .18em;
       }
 
-      .journal-carousel-arrow {
+      .journal-chapter-copy {
         position:
           absolute;
 
         z-index:
-          7;
+          6;
 
-        top:
-          calc(
-            50% - 58px
-          );
+        left:
+          22px;
 
-        width:
-          46px;
+        right:
+          22px;
 
-        height:
-          46px;
+        bottom:
+          24px;
 
         display:
-          grid;
+          flex;
 
-        place-items:
-          center;
+        flex-direction:
+          column;
 
-        border:
-          1px solid
-          rgba(
-            255,
-            255,
-            255,
-            .2
-          );
+        align-items:
+          flex-start;
 
-        border-radius:
-          50%;
-
-        background:
-          rgba(
-            8,
-            5,
-            16,
-            .58
-          );
-
-        color:
-          #fff;
-
-        backdrop-filter:
-          blur(
-            16px
-          );
-
-        -webkit-backdrop-filter:
-          blur(
-            16px
-          );
-
-        font:
-          300
-          34px/1
-          "Montserrat",
-          sans-serif;
-
-        transition:
-          .2s opacity,
-          .2s transform,
-          .2s background;
-      }
-
-      .journal-carousel-arrow:hover {
-        transform:
-          scale(
-            1.06
-          );
-
-        background:
-          rgba(
-            104,
-            53,
-            178,
-            .64
-          );
-      }
-
-      .journal-carousel-arrow:disabled {
-        opacity:
-          .18;
+        text-align:
+          left;
 
         pointer-events:
           none;
       }
 
-      .journal-carousel-prev {
-        left:
-          16px;
+      .journal-chapter-title {
+        max-width:
+          100%;
+
+        color:
+          #fff;
+
+        font:
+          400
+          clamp(
+            18px,
+            1.65vw,
+            26px
+          )/1.05
+          "Montserrat",
+          sans-serif;
+
+        letter-spacing:
+          -.045em;
+
+        text-shadow:
+          0 3px 22px
+          rgba(
+            0,
+            0,
+            0,
+            .68
+          );
       }
 
-      .journal-carousel-next {
-        right:
-          16px;
+      .journal-chapter-date {
+        margin-top:
+          8px;
+
+        color:
+          #dfd4e5;
+
+        font:
+          500
+          9px
+          "Montserrat",
+          sans-serif;
+
+        letter-spacing:
+          .10em;
       }
 
-      .journal-carousel-bottom {
-        display:
-          flex;
+      .journal-chapter-count {
+        margin-top:
+          10px;
 
-        align-items:
-          center;
+        color:
+          #f4d79f;
 
-        justify-content:
-          space-between;
+        font:
+          500
+          9px
+          "Montserrat",
+          sans-serif;
 
-        min-height:
-          42px;
+        letter-spacing:
+          .09em;
+      }
 
-        gap:
+      .journal-chapter-quote {
+        width:
+          100%;
+
+        margin-top:
           14px;
 
-        padding:
-          8px
-          16px
-          10px;
+        padding-top:
+          12px;
 
         border-top:
           1px solid
           rgba(
-            220,
-            188,
             255,
-            .08
+            255,
+            255,
+            .16
           );
 
-        background:
-          rgba(
-            7,
-            4,
-            13,
-            .88
-          );
+        color:
+          #efe4f2;
+
+        font:
+          300
+          12px/1.55
+          "Heebo",
+          sans-serif;
+
+        text-align:
+          right;
+
+        direction:
+          rtl;
+      }
+
+      .journal-chapter-quote-empty {
+        color:
+          #b8a7bf;
+
+        text-align:
+          left;
 
         direction:
           ltr;
-      }
 
-      .journal-carousel-dots {
-        display:
-          flex;
-
-        align-items:
-          center;
-
-        gap:
-          7px;
-
-        min-height:
-          12px;
-      }
-
-      .journal-carousel-dot {
-        width:
-          6px;
-
-        height:
-          6px;
-
-        padding:
-          0;
-
-        border:
-          0;
-
-        border-radius:
-          999px;
-
-        background:
-          rgba(
-            231,
-            211,
-            245,
-            .25
-          );
-
-        transition:
-          .2s width,
-          .2s background;
-      }
-
-      .journal-carousel-dot.is-active {
-        width:
-          22px;
-
-        background:
-          linear-gradient(
-            90deg,
-            #c89cff,
-            #ff78c7
-          );
-      }
-
-      .journal-carousel-counter {
-        color:
-          #8f8199;
-
-        font-family:
+        font:
+          500
+          8px
           "Montserrat",
           sans-serif;
 
-        font-size:
-          9px;
-
         letter-spacing:
-          .14em;
+          .16em;
       }
 
-      .journal-coming {
-        display:
-          flex;
+      .journal-chapter-card:hover
+      .journal-chapter-front {
+        transform:
+          translateY(
+            -6px
+          );
 
-        align-items:
-          center;
-
-        justify-content:
-          space-between;
-
-        gap:
-          16px;
+        border-color:
+          rgba(
+            246,
+            215,
+            157,
+            .78
+          );
       }
 
-      .journal-live-footer-copy {
+      .journal-chapter-card:hover
+      .journal-chapter-back-one {
+        transform:
+          translate(
+            15px,
+            -11px
+          )
+          rotate(
+            5deg
+          )
+          scale(
+            .965
+          );
+      }
+
+      .journal-chapter-card:hover
+      .journal-chapter-back-two {
+        transform:
+          translate(
+            -15px,
+            -5px
+          )
+          rotate(
+            -5deg
+          )
+          scale(
+            .94
+          );
+      }
+
+      .journal-chapter-footer-copy {
         display:
           flex;
 
@@ -2469,7 +2322,7 @@
           3px;
       }
 
-      .journal-live-footer-copy span {
+      .journal-chapter-footer-copy span {
         color:
           #a99cad;
 
@@ -2507,21 +2360,698 @@
 
         color:
           #eee4f5;
+      }
+
+      /*
+        STORY MODE
+      */
+
+      .journal-story-viewer {
+        position:
+          fixed;
+
+        z-index:
+          100000;
+
+        inset:
+          0;
+
+        display:
+          none;
+
+        padding:
+          20px;
+
+        background:
+          rgba(
+            3,
+            2,
+            6,
+            .96
+          );
+
+        backdrop-filter:
+          blur(
+            20px
+          );
+
+        -webkit-backdrop-filter:
+          blur(
+            20px
+          );
+      }
+
+      .journal-story-viewer.is-open {
+        display:
+          grid;
+
+        place-items:
+          center;
+      }
+
+      body.journal-story-open {
+        overflow:
+          hidden;
+      }
+
+      .journal-story-shell {
+        width:
+          min(
+            1280px,
+            100%
+          );
+
+        height:
+          min(
+            920px,
+            calc(
+              100vh -
+              40px
+            )
+          );
+
+        display:
+          grid;
+
+        grid-template-rows:
+          auto
+          minmax(
+            0,
+            1fr
+          )
+          auto;
+
+        overflow:
+          hidden;
+
+        border:
+          1px solid
+          rgba(
+            230,
+            208,
+            255,
+            .16
+          );
+
+        border-radius:
+          18px;
+
+        background:
+          #08050d;
+
+        box-shadow:
+          0 45px 140px
+          rgba(
+            0,
+            0,
+            0,
+            .72
+          );
+      }
+
+      .journal-story-topbar {
+        min-height:
+          68px;
+
+        display:
+          grid;
+
+        grid-template-columns:
+          1fr
+          auto
+          1fr;
+
+        align-items:
+          center;
+
+        gap:
+          18px;
+
+        padding:
+          13px
+          18px;
+
+        border-bottom:
+          1px solid
+          rgba(
+            229,
+            205,
+            255,
+            .10
+          );
+
+        background:
+          rgba(
+            8,
+            5,
+            13,
+            .96
+          );
+      }
+
+      .journal-story-back {
+        justify-self:
+          start;
+
+        border:
+          0;
+
+        background:
+          transparent;
+
+        color:
+          #c9b9d1;
 
         font:
           500
-          10px
+          11px
           "Heebo",
           sans-serif;
       }
 
-      .journal-refresh-btn:disabled {
+      .journal-story-heading {
+        text-align:
+          center;
+      }
+
+      .journal-story-heading strong {
+        display:
+          block;
+
+        color:
+          #f8effd;
+
+        font:
+          500
+          13px
+          "Montserrat",
+          sans-serif;
+
+        letter-spacing:
+          .10em;
+      }
+
+      .journal-story-heading small {
+        display:
+          block;
+
+        margin-top:
+          4px;
+
+        color:
+          #94869b;
+
+        font:
+          500
+          8px
+          "Montserrat",
+          sans-serif;
+
+        letter-spacing:
+          .12em;
+      }
+
+      .journal-story-counter {
+        justify-self:
+          end;
+
+        color:
+          #d4c2db;
+
+        font:
+          500
+          10px
+          "Montserrat",
+          sans-serif;
+
+        letter-spacing:
+          .14em;
+      }
+
+      .journal-story-stage {
+        position:
+          relative;
+
+        min-height:
+          0;
+
+        overflow:
+          hidden;
+
+        background:
+          #050307;
+      }
+
+      .journal-story-bg {
+        position:
+          absolute;
+
+        inset:
+          -40px;
+
+        background-position:
+          center;
+
+        background-size:
+          cover;
+
+        filter:
+          blur(
+            34px
+          )
+          saturate(
+            .62
+          )
+          brightness(
+            .28
+          );
+
+        transform:
+          scale(
+            1.12
+          );
+
         opacity:
-          .5;
+          .8;
+      }
+
+      .journal-story-image {
+        position:
+          absolute;
+
+        z-index:
+          2;
+
+        inset:
+          0;
+
+        width:
+          100%;
+
+        height:
+          100%;
+
+        object-fit:
+          contain;
+      }
+
+      .journal-story-vignette {
+        position:
+          absolute;
+
+        z-index:
+          3;
+
+        inset:
+          0;
+
+        pointer-events:
+          none;
+
+        background:
+          linear-gradient(
+            to top,
+            rgba(
+              4,
+              2,
+              7,
+              .94
+            )
+            0%,
+
+            rgba(
+              4,
+              2,
+              7,
+              .55
+            )
+            20%,
+
+            transparent
+            46%
+          ),
+
+          linear-gradient(
+            to bottom,
+            rgba(
+              4,
+              2,
+              7,
+              .18
+            ),
+            transparent
+            20%
+          );
+      }
+
+      .journal-story-copy {
+        position:
+          absolute;
+
+        z-index:
+          5;
+
+        right:
+          clamp(
+            24px,
+            5vw,
+            76px
+          );
+
+        left:
+          clamp(
+            24px,
+            5vw,
+            76px
+          );
+
+        bottom:
+          28px;
+
+        max-width:
+          720px;
+
+        margin:
+          auto;
+
+        text-align:
+          center;
+
+        text-shadow:
+          0 2px 22px
+          rgba(
+            0,
+            0,
+            0,
+            .7
+          );
+      }
+
+      .journal-story-meta {
+        display:
+          flex;
+
+        align-items:
+          center;
+
+        justify-content:
+          center;
+
+        flex-wrap:
+          wrap;
+
+        gap:
+          8px;
+
+        color:
+          #d3c5d8;
+
+        font-size:
+          11px;
+      }
+
+      .journal-story-meta span {
+        padding:
+          6px
+          9px;
+
+        border:
+          1px solid
+          rgba(
+            255,
+            255,
+            255,
+            .16
+          );
+
+        border-radius:
+          999px;
+
+        background:
+          rgba(
+            5,
+            3,
+            8,
+            .36
+          );
+
+        backdrop-filter:
+          blur(
+            10px
+          );
+
+        -webkit-backdrop-filter:
+          blur(
+            10px
+          );
+      }
+
+      .journal-story-copy blockquote {
+        margin:
+          14px
+          auto
+          0;
+
+        max-width:
+          660px;
+
+        color:
+          #fff8ff;
+
+        font:
+          300
+          clamp(
+            20px,
+            2.1vw,
+            32px
+          )/1.35
+          "Heebo",
+          sans-serif;
+      }
+
+      .journal-story-copy blockquote:before {
+        content:
+          "“";
+
+        display:
+          block;
+
+        height:
+          20px;
+
+        color:
+          #f6d79d;
+
+        font:
+          500
+          44px/1
+          "Cormorant Garamond",
+          serif;
+      }
+
+      .journal-story-copy blockquote.is-empty {
+        color:
+          #a99bab;
+
+        font-style:
+          italic;
+      }
+
+      .journal-story-arrow {
+        position:
+          absolute;
+
+        z-index:
+          8;
+
+        top:
+          50%;
+
+        transform:
+          translateY(
+            -50%
+          );
+
+        width:
+          52px;
+
+        height:
+          52px;
+
+        display:
+          grid;
+
+        place-items:
+          center;
+
+        border:
+          1px solid
+          rgba(
+            255,
+            255,
+            255,
+            .19
+          );
+
+        border-radius:
+          50%;
+
+        background:
+          rgba(
+            8,
+            5,
+            14,
+            .54
+          );
+
+        color:
+          white;
+
+        font:
+          300
+          36px/1
+          "Montserrat",
+          sans-serif;
+
+        backdrop-filter:
+          blur(
+            14px
+          );
+
+        -webkit-backdrop-filter:
+          blur(
+            14px
+          );
+      }
+
+      .journal-story-prev {
+        left:
+          20px;
+      }
+
+      .journal-story-next {
+        right:
+          20px;
+      }
+
+      .journal-story-arrow:disabled {
+        opacity:
+          .14;
+
+        pointer-events:
+          none;
+      }
+
+      .journal-story-thumbs {
+        min-height:
+          92px;
+
+        display:
+          flex;
+
+        gap:
+          8px;
+
+        align-items:
+          center;
+
+        overflow-x:
+          auto;
+
+        padding:
+          10px
+          14px;
+
+        background:
+          #08050d;
+
+        border-top:
+          1px solid
+          rgba(
+            229,
+            205,
+            255,
+            .09
+          );
+
+        scrollbar-width:
+          none;
+      }
+
+      .journal-story-thumbs::-webkit-scrollbar {
+        display:
+          none;
+      }
+
+      .journal-story-thumb {
+        flex:
+          0 0 74px;
+
+        width:
+          74px;
+
+        height:
+          68px;
+
+        padding:
+          0;
+
+        overflow:
+          hidden;
+
+        border:
+          1px solid
+          rgba(
+            255,
+            255,
+            255,
+            .12
+          );
+
+        border-radius:
+          7px;
+
+        background:
+          #110a18;
+
+        opacity:
+          .58;
+
+        transition:
+          .2s opacity,
+          .2s border-color,
+          .2s transform;
+      }
+
+      .journal-story-thumb img {
+        width:
+          100%;
+
+        height:
+          100%;
+
+        object-fit:
+          cover;
+
+        display:
+          block;
+      }
+
+      .journal-story-thumb.is-active {
+        opacity:
+          1;
+
+        border-color:
+          #f4d79f;
+
+        transform:
+          translateY(
+            -2px
+          );
       }
 
       /*
-        EMPTY / ERROR
+        EMPTY
       */
 
       .journal-live-empty {
@@ -2561,15 +3091,18 @@
 
         background:
           radial-gradient(
-            circle at 18% 50%,
+            circle
+            at 18% 50%,
             rgba(
               141,
               70,
               255,
               .16
             ),
-            transparent 28%
+            transparent
+            28%
           ),
+
           linear-gradient(
             145deg,
             rgba(
@@ -2754,189 +3287,7 @@
       }
 
       /*
-        LIGHTBOX
-      */
-
-      .journal-lightbox {
-        position:
-          fixed;
-
-        z-index:
-          99999;
-
-        inset:
-          0;
-
-        display:
-          none;
-
-        place-items:
-          center;
-
-        padding:
-          24px;
-
-        background:
-          rgba(
-            3,
-            2,
-            7,
-            .92
-          );
-
-        backdrop-filter:
-          blur(
-            18px
-          );
-
-        -webkit-backdrop-filter:
-          blur(
-            18px
-          );
-      }
-
-      .journal-lightbox.is-open {
-        display:
-          grid;
-      }
-
-      body.journal-lightbox-open {
-        overflow:
-          hidden;
-      }
-
-      .journal-lightbox-inner {
-        width:
-          min(
-            1100px,
-            100%
-          );
-
-        max-height:
-          92vh;
-
-        display:
-          grid;
-
-        grid-template-rows:
-          minmax(
-            0,
-            1fr
-          )
-          auto;
-
-        overflow:
-          hidden;
-
-        border:
-          1px solid
-          rgba(
-            231,
-            205,
-            255,
-            .14
-          );
-
-        border-radius:
-          20px;
-
-        background:
-          #08050e;
-      }
-
-      .journal-lightbox img {
-        width:
-          100%;
-
-        height:
-          min(
-            76vh,
-            820px
-          );
-
-        object-fit:
-          contain;
-
-        background:
-          #040207;
-      }
-
-      .journal-lightbox-copy {
-        padding:
-          15px
-          18px
-          18px;
-      }
-
-      .journal-lightbox-copy p {
-        margin:
-          0 0 5px;
-
-        color:
-          #f5edf9;
-
-        font-size:
-          17px;
-      }
-
-      .journal-lightbox-copy small {
-        color:
-          #9e90a6;
-      }
-
-      .journal-lightbox-close {
-        position:
-          fixed;
-
-        z-index:
-          2;
-
-        top:
-          max(
-            18px,
-            env(
-              safe-area-inset-top
-            )
-          );
-
-        right:
-          20px;
-
-        width:
-          44px;
-
-        height:
-          44px;
-
-        border:
-          1px solid
-          rgba(
-            255,
-            255,
-            255,
-            .2
-          );
-
-        border-radius:
-          50%;
-
-        background:
-          rgba(
-            15,
-            10,
-            22,
-            .76
-          );
-
-        color:
-          white;
-
-        font-size:
-          28px;
-      }
-
-      /*
-        MOBILE NAVIGATION
+        MOBILE NAV
       */
 
       .aviation-nav {
@@ -2957,8 +3308,27 @@
 
       @media (
         max-width:
+          1050px
+      ) {
+
+        .journal-chapters-grid {
+          grid-template-columns:
+            repeat(
+              3,
+              minmax(
+                0,
+                1fr
+              )
+            ) !important;
+        }
+
+      }
+
+      @media (
+        max-width:
           900px
       ) {
+
         .aviation-nav .nav-links {
           display:
             none !important;
@@ -2994,7 +3364,7 @@
               8,
               5,
               16,
-              .92
+              .94
             );
 
           backdrop-filter:
@@ -3032,11 +3402,8 @@
           scrollbar-width:
             none;
 
-          -ms-overflow-style:
-            none;
-
-          overscroll-behavior-inline:
-            contain;
+          -webkit-overflow-scrolling:
+            touch;
         }
 
         .hagit-mobile-nav-track::-webkit-scrollbar {
@@ -3086,11 +3453,6 @@
 
           white-space:
             nowrap;
-
-          transition:
-            .2s color,
-            .2s background,
-            .2s border-color;
         }
 
         .hagit-mobile-nav a.is-active {
@@ -3108,23 +3470,136 @@
             transparent;
         }
 
-        .journal-day-block {
-          border-radius:
-            18px;
+        .journal-chapters-grid {
+          grid-template-columns:
+            repeat(
+              2,
+              minmax(
+                0,
+                1fr
+              )
+            ) !important;
+
+          gap:
+            20px !important;
         }
 
-        .journal-slide-photo {
+      }
+
+      @media (
+        max-width:
+          620px
+      ) {
+
+        .journal-chapters-grid {
+          grid-template-columns:
+            1fr !important;
+
+          gap:
+            20px !important;
+        }
+
+        .journal-chapter-card {
+          max-width:
+            390px;
+
+          margin:
+            0 auto;
+
+          padding:
+            10px
+            13px
+            8px;
+        }
+
+        .journal-chapter-stack {
+          aspect-ratio:
+            .84;
+        }
+
+        .journal-chapter-copy {
+          left:
+            26px;
+
+          right:
+            26px;
+
+          bottom:
+            28px;
+        }
+
+        .journal-chapter-title {
+          font-size:
+            25px;
+        }
+
+        .journal-chapter-day {
+          font-size:
+            72px;
+        }
+
+        .journal-story-viewer {
+          padding:
+            0;
+        }
+
+        .journal-story-shell {
+          width:
+            100%;
+
           height:
-            min(
-              58vh,
-              480px
-            );
+            100%;
 
-          min-height:
-            330px;
+          border:
+            0;
+
+          border-radius:
+            0;
+
+          grid-template-rows:
+            auto
+            minmax(
+              0,
+              1fr
+            )
+            auto;
         }
 
-        .journal-carousel-arrow {
+        .journal-story-topbar {
+          min-height:
+            64px;
+
+          grid-template-columns:
+            1fr
+            auto;
+
+          padding:
+            max(
+              11px,
+              env(
+                safe-area-inset-top
+              )
+            )
+            12px
+            10px;
+        }
+
+        .journal-story-heading {
+          display:
+            none;
+        }
+
+        .journal-story-back {
+          font-size:
+            10px;
+        }
+
+        .journal-story-counter {
+          font-size:
+            9px;
+        }
+
+        .journal-story-arrow {
           width:
             40px;
 
@@ -3132,39 +3607,76 @@
             40px;
 
           font-size:
-            29px;
+            28px;
         }
 
-        .journal-carousel-prev {
+        .journal-story-prev {
           left:
             10px;
         }
 
-        .journal-carousel-next {
+        .journal-story-next {
           right:
             10px;
         }
 
-        .journal-day-head {
-          padding:
-            15px
-            15px
-            12px;
-        }
-
-        .journal-slide-copy {
-          padding:
-            15px
-            15px
+        .journal-story-copy {
+          left:
             18px;
 
-          min-height:
-            118px;
+          right:
+            18px;
+
+          bottom:
+            22px;
         }
 
-        .journal-memory-caption {
+        .journal-story-copy blockquote {
           font-size:
-            17px;
+            19px;
+
+          line-height:
+            1.35;
+        }
+
+        .journal-story-meta {
+          font-size:
+            9px;
+
+          gap:
+            5px;
+        }
+
+        .journal-story-meta span {
+          padding:
+            5px
+            7px;
+        }
+
+        .journal-story-thumbs {
+          min-height:
+            82px;
+
+          padding:
+            8px
+            10px
+            calc(
+              8px +
+              env(
+                safe-area-inset-bottom
+              )
+            );
+        }
+
+        .journal-story-thumb {
+          flex-basis:
+            62px;
+
+          width:
+            62px;
+
+          height:
+            58px;
         }
 
         .journal-live-empty {
@@ -3191,160 +3703,11 @@
         }
 
         .journal-coming {
-          align-items:
-            flex-start;
-        }
-      }
-
-      @media (
-        max-width:
-          620px
-      ) {
-        .aviation-nav .nav-in {
-          height:
-            56px !important;
-
-          padding-inline:
-            0;
-        }
-
-        .aviation-nav .nav-party {
-          padding:
-            8px
-            10px;
-
-          font-size:
-            8px;
-
-          letter-spacing:
-            .04em;
-        }
-
-        .aviation-brand span {
-          font-size:
-            15px !important;
-        }
-
-        .aviation-brand small {
-          font-size:
-            7px !important;
-        }
-
-        .wrap {
-          width:
-            min(
-              100% - 22px,
-              1240px
-            ) !important;
-        }
-
-        .section {
-          padding-top:
-            56px !important;
-
-          padding-bottom:
-            56px !important;
-        }
-
-        .birthday-wrap {
-          padding-top:
-            20px !important;
-        }
-
-        .birthday-grid {
-          gap:
-            0 !important;
-        }
-
-        .birthday-art {
-          margin-top:
-            -34px !important;
-        }
-
-        .journal-hero {
-          gap:
-            20px !important;
-        }
-
-        .journal-title {
-          font-size:
-            clamp(
-              46px,
-              16vw,
-              68px
-            ) !important;
-        }
-
-        .journal-intro {
-          font-size:
-            14px !important;
-        }
-
-        .journal-cloud-note {
-          padding:
-            13px !important;
-        }
-
-        .journal-day-head {
-          align-items:
-            flex-start;
-
           flex-direction:
             column;
 
-          gap:
-            6px;
-        }
-
-        .journal-slide-photo {
-          height:
-            min(
-              52vh,
-              420px
-            );
-
-          min-height:
-            300px;
-        }
-
-        .journal-carousel-arrow {
-          top:
-            calc(
-              50% - 60px
-            );
-
-          width:
-            36px;
-
-          height:
-            36px;
-
-          font-size:
-            26px;
-        }
-
-        .journal-carousel-bottom {
-          padding-inline:
-            12px;
-        }
-
-        .journal-memory-meta {
-          gap:
-            6px;
-
-          font-size:
-            10px;
-        }
-
-        .journal-memory-meta span {
-          padding:
-            5px
-            8px;
-        }
-
-        .journal-coming {
-          flex-direction:
-            column;
+          align-items:
+            stretch;
         }
 
         .journal-refresh-btn {
@@ -3352,35 +3715,6 @@
             100%;
         }
 
-        .journal-lightbox {
-          padding:
-            0;
-        }
-
-        .journal-lightbox-inner {
-          width:
-            100%;
-
-          height:
-            100%;
-
-          max-height:
-            none;
-
-          border:
-            0;
-
-          border-radius:
-            0;
-        }
-
-        .journal-lightbox img {
-          height:
-            calc(
-              100vh -
-              120px
-            );
-        }
       }
     `;
 
@@ -3389,18 +3723,38 @@
     );
   }
 
-  function escapeHtml(
-    value
+  function truncate(
+    value,
+    maxLength
   ) {
+    const text =
+      String(
+        value ||
+          ""
+      );
+
+    return (
+      text.length >
+      maxLength
+        ? `${text
+            .slice(
+              0,
+              maxLength -
+                1
+            )
+            .trim()}…`
+        : text
+    );
+  }
+
+  function escapeHtml(value) {
     return String(
       value ??
         ""
     ).replace(
       /[&<>"']/g,
-      (
-        char
-      ) => {
-        return {
+      (character) =>
+        ({
           "&":
             "&amp;",
 
@@ -3415,44 +3769,18 @@
 
           "'":
             "&#39;",
-        }[char];
-      }
+        })[
+          character
+        ]
     );
   }
 
-  function escapeAttr(
-    value
-  ) {
+  function escapeAttr(value) {
     return escapeHtml(
       value
     ).replace(
       /`/g,
       "&#96;"
     );
-  }
-
-  function debounce(
-    fn,
-    delay
-  ) {
-    let timer =
-      0;
-
-    return (
-      ...args
-    ) => {
-      clearTimeout(
-        timer
-      );
-
-      timer =
-        window.setTimeout(
-          () =>
-            fn(
-              ...args
-            ),
-          delay
-        );
-    };
   }
 })();
