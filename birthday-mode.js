@@ -2,7 +2,7 @@
   "use strict";
 
   const CFG = {
-    timeZone: "Asia/Jerusalem", // כרגע לבדיקה. אחר כך נשנה ל-America/Los_Angeles
+    timeZone: "America/Los_Angeles", // כרגע לבדיקה. אחר כך נשנה ל-America/Los_Angeles
     date: "2026-08-21",
     duration: 9500,
 
