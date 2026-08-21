@@ -4,16 +4,91 @@
   const CFG = {
     timeZone: "Asia/Jerusalem", // כרגע לבדיקה. אחר כך נשנה ל-America/Los_Angeles
     date: "2026-08-21",
-    duration: 9500
+    duration: 9500,
+
+    // PERFORMANCE
+    desktopFPS: 30,
+    mobileFPS: 60,
+    desktopDpr: 1.15,
+    mobileDpr: 2,
+    desktopParticleScale: 0.48,
+    mobileParticleScale: 1,
+    desktopMaxParticles: 520,
+    mobileMaxParticles: 1500
   };
 
-  const SEEN = `h60-birthday-${CFG.date}-v2`;
-
   const forced =
-    new URLSearchParams(location.search)
-      .get("birthday") === "1";
+    new URLSearchParams(
+      location.search
+    ).get("birthday") === "1";
 
-  if (!isBirthday() && !forced) return;
+  const SEEN =
+    `h60-birthday-${CFG.date}-v3`;
+
+  if (
+    !isBirthday() &&
+    !forced
+  ) {
+    return;
+  }
+
+  const coarsePointer =
+    matchMedia(
+      "(pointer: coarse)"
+    ).matches;
+
+  const narrowScreen =
+    matchMedia(
+      "(max-width: 820px)"
+    ).matches;
+
+  const isMobile =
+    coarsePointer ||
+    narrowScreen;
+
+  const reduceMotion =
+    matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+
+  const PERF = {
+    fps:
+      isMobile
+        ? CFG.mobileFPS
+        : CFG.desktopFPS,
+
+    frameMs:
+      1000 /
+      (
+        isMobile
+          ? CFG.mobileFPS
+          : CFG.desktopFPS
+      ),
+
+    dpr:
+      isMobile
+        ? Math.min(
+            devicePixelRatio || 1,
+            CFG.mobileDpr
+          )
+        : Math.min(
+            devicePixelRatio || 1,
+            CFG.desktopDpr
+          ),
+
+    particleScale:
+      isMobile
+        ? CFG.mobileParticleScale
+        : CFG.desktopParticleScale,
+
+    maxParticles:
+      isMobile
+        ? CFG.mobileMaxParticles
+        : CFG.desktopMaxParticles,
+
+    glow:
+      isMobile
+  };
 
   let overlay;
   let canvas;
@@ -21,17 +96,13 @@
 
   let raf = 0;
   let closingTimer = 0;
+  let lastFrame = 0;
+
+  let running = false;
 
   let particles = [];
   let rockets = [];
   let stars = [];
-
-  let running = false;
-
-  const reduce =
-    matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
 
   addStyles();
   build();
@@ -40,44 +111,62 @@
 
   const auto =
     forced ||
-    sessionStorage.getItem(SEEN) !== "1";
+    sessionStorage.getItem(
+      SEEN
+    ) !== "1";
 
   if (auto) {
-    const start = () =>
-      setTimeout(
-        () => openBirthday(true),
-        450
-      );
+    const start =
+      () =>
+        setTimeout(
+          () =>
+            openBirthday(true),
+          450
+        );
 
-    document.readyState === "complete"
+    document.readyState ===
+    "complete"
       ? start()
       : addEventListener(
           "load",
           start,
-          { once: true }
+          {
+            once:true
+          }
         );
   }
 
   function isBirthday() {
+
     const parts =
-      new Intl.DateTimeFormat(
-        "en-CA",
-        {
-          timeZone: CFG.timeZone,
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit"
-        }
-      ).formatToParts(
-        new Date()
-      );
+      new Intl
+        .DateTimeFormat(
+          "en-CA",
+          {
+            timeZone:
+              CFG.timeZone,
+
+            year:
+              "numeric",
+
+            month:
+              "2-digit",
+
+            day:
+              "2-digit"
+          }
+        )
+        .formatToParts(
+          new Date()
+        );
 
     const values =
       Object.fromEntries(
         parts
           .filter(
             p =>
-              p.type !== "literal"
+              p.type !==
+              "literal"
           )
           .map(
             p => [
@@ -94,18 +183,21 @@
   }
 
   function addStyles() {
+
     if (
-      document.getElementById(
-        "h60-bday-style"
-      )
+      document
+        .getElementById(
+          "h60-bday-style"
+        )
     ) {
       return;
     }
 
     const s =
-      document.createElement(
-        "style"
-      );
+      document
+        .createElement(
+          "style"
+        );
 
     s.id =
       "h60-bday-style";
@@ -120,7 +212,6 @@
         isolation:isolate;
 
         color:#fff;
-
         opacity:0;
 
         transition:
@@ -461,8 +552,7 @@
         letter-spacing:
           .22em;
 
-        color:
-          #ffc3e3;
+        color:#ffc3e3;
 
         white-space:
           nowrap;
@@ -482,8 +572,7 @@
         letter-spacing:
           -.025em;
 
-        color:
-          #f4eaff;
+        color:#f4eaff;
 
         opacity:0;
 
@@ -550,8 +639,7 @@
             .22
           );
 
-        border-radius:
-          999px;
+        border-radius:999px;
 
         padding:
           12px 17px;
@@ -679,8 +767,7 @@
           "Montserrat",
           sans-serif;
 
-        letter-spacing:
-          .25em;
+        letter-spacing:.25em;
 
         color:#817487;
 
@@ -766,8 +853,7 @@
           "Heebo",
           sans-serif;
 
-        letter-spacing:
-          .08em;
+        letter-spacing:.08em;
 
         cursor:pointer;
 
@@ -892,9 +978,9 @@
               -50%,
               -50%
             )
-            scale(.94);
+            scale(.96);
 
-          opacity:.72;
+          opacity:.78;
         }
 
         50%{
@@ -903,7 +989,7 @@
               -50%,
               -50%
             )
-            scale(1.08);
+            scale(1.05);
 
           opacity:1;
         }
@@ -919,7 +1005,7 @@
               -50%,
               -54%
             )
-            scale(.96);
+            scale(.97);
         }
 
         50%{
@@ -930,7 +1016,32 @@
               -50%,
               -54%
             )
-            scale(1.025);
+            scale(1.02);
+        }
+      }
+
+      @media(min-width:821px){
+
+        #h60Birthday.h60-desktop
+        .h60-glow{
+          filter:blur(22px);
+        }
+
+        #h60Birthday.h60-desktop
+        .h60-title{
+          text-shadow:
+            0 0 38px
+            rgba(
+              187,
+              98,
+              255,
+              .10
+            );
+        }
+
+        #h60Birthday.h60-desktop
+        .h60-noise{
+          opacity:.12;
         }
       }
 
@@ -941,7 +1052,9 @@
             calc(100% - 24px);
 
           padding:
-            75px 0 85px;
+            75px
+            0
+            85px;
         }
 
         .h60-title{
@@ -955,9 +1068,7 @@
 
         .h60-line b{
           font-size:8px;
-
-          letter-spacing:
-            .15em;
+          letter-spacing:.15em;
         }
 
         .h60-sub{
@@ -966,14 +1077,12 @@
 
         .h60-he{
           max-width:330px;
-
           line-height:1.55;
         }
 
         #h60Replay{
           right:12px;
           bottom:12px;
-
           padding:
             10px 12px;
         }
@@ -990,22 +1099,33 @@
       }
     `;
 
-    document.head.appendChild(
-      s
-    );
+    document.head
+      .appendChild(s);
   }
 
   function build() {
+
     overlay =
-      document.createElement(
-        "div"
-      );
+      document
+        .createElement(
+          "div"
+        );
 
     overlay.id =
       "h60Birthday";
 
+    if (!isMobile) {
+      overlay
+        .classList
+        .add(
+          "h60-desktop"
+        );
+    }
+
     overlay.innerHTML = `
-      <canvas id="h60BdayCanvas"></canvas>
+      <canvas
+        id="h60BdayCanvas"
+      ></canvas>
 
       <div class="h60-noise"></div>
       <div class="h60-glow"></div>
@@ -1067,6 +1187,7 @@
 
         <div class="h60-he">
           מזל טוב אמא ❤️
+          <br>
           60 מעולם לא נראה
           כל כך טוב.
         </div>
@@ -1099,22 +1220,29 @@
       </div>
     `;
 
-    document.body.appendChild(
-      overlay
-    );
+    document.body
+      .appendChild(
+        overlay
+      );
 
     canvas =
-      document.getElementById(
-        "h60BdayCanvas"
-      );
+      document
+        .getElementById(
+          "h60BdayCanvas"
+        );
 
     ctx =
-      canvas.getContext(
-        "2d"
-      );
+      canvas
+        .getContext(
+          "2d",
+          {
+            alpha:true
+          }
+        );
   }
 
   function bind() {
+
     document
       .getElementById(
         "h60Close"
@@ -1135,19 +1263,24 @@
       )
       .onclick =
         () => {
+
           finale();
 
           setTimeout(
             finale,
-            420
+            isMobile
+              ? 420
+              : 520
           );
         };
 
     addEventListener(
       "keydown",
       e => {
+
         if (
-          e.key === "Escape" &&
+          e.key ===
+            "Escape" &&
           overlay
             .classList
             .contains("open")
@@ -1159,10 +1292,12 @@
   }
 
   function addReplayButton() {
+
     const b =
-      document.createElement(
-        "button"
-      );
+      document
+        .createElement(
+          "button"
+        );
 
     b.id =
       "h60Replay";
@@ -1176,23 +1311,31 @@
 
     b.onclick =
       () =>
-        openBirthday(false);
+        openBirthday(
+          false
+        );
 
-    document.body.appendChild(
-      b
-    );
+    document.body
+      .appendChild(
+        b
+      );
   }
 
   function openBirthday(auto) {
-    if (running) return;
 
-    running = true;
+    if (running) {
+      return;
+    }
+
+    running =
+      true;
 
     if (auto) {
-      sessionStorage.setItem(
-        SEEN,
-        "1"
-      );
+      sessionStorage
+        .setItem(
+          SEEN,
+          "1"
+        );
     }
 
     clearTimeout(
@@ -1202,6 +1345,7 @@
     particles = [];
     rockets = [];
     stars = [];
+    lastFrame = 0;
 
     overlay
       .classList
@@ -1234,12 +1378,14 @@
     addEventListener(
       "resize",
       resize,
-      { passive:true }
+      {
+        passive:true
+      }
     );
 
     startLoop();
 
-    reduce
+    reduceMotion
       ? finale()
       : sequence();
 
@@ -1251,6 +1397,7 @@
   }
 
   function closeBirthday() {
+
     if (
       !overlay
         .classList
@@ -1275,7 +1422,9 @@
 
         overlay
           .classList
-          .remove("open");
+          .remove(
+            "open"
+          );
 
         document
           .documentElement
@@ -1296,16 +1445,23 @@
           raf
         );
 
+        removeEventListener(
+          "resize",
+          resize
+        );
+
         particles = [];
         rockets = [];
         stars = [];
 
-        ctx.clearRect(
-          0,
-          0,
-          innerWidth,
-          innerHeight
-        );
+        if (ctx) {
+          ctx.clearRect(
+            0,
+            0,
+            innerWidth,
+            innerHeight
+          );
+        }
 
       },
       650
@@ -1313,24 +1469,42 @@
   }
 
   function resize() {
+
+    if (
+      !canvas ||
+      !ctx
+    ) {
+      return;
+    }
+
     const dpr =
-      Math.min(
-        devicePixelRatio ||
-        1,
-        2
-      );
+      PERF.dpr;
 
     canvas.width =
-      innerWidth * dpr;
+      Math.max(
+        1,
+        Math.floor(
+          innerWidth *
+          dpr
+        )
+      );
 
     canvas.height =
-      innerHeight * dpr;
+      Math.max(
+        1,
+        Math.floor(
+          innerHeight *
+          dpr
+        )
+      );
 
     canvas.style.width =
-      innerWidth + "px";
+      innerWidth +
+      "px";
 
     canvas.style.height =
-      innerHeight + "px";
+      innerHeight +
+      "px";
 
     ctx.setTransform(
       dpr,
@@ -1343,6 +1517,7 @@
   }
 
   function sequence() {
+
     rocket(
       .17,
       .22,
@@ -1373,38 +1548,58 @@
 
     setTimeout(
       () => {
+
         burst(
-          innerWidth * .12,
-          innerHeight * .43,
+          innerWidth *
+          .12,
+
+          innerHeight *
+          .43,
+
           80,
           "pink"
         );
 
         burst(
-          innerWidth * .88,
-          innerHeight * .42,
+          innerWidth *
+          .88,
+
+          innerHeight *
+          .42,
+
           80,
           "purple"
         );
+
       },
       2300
     );
 
     setTimeout(
       () => {
+
         burst(
-          innerWidth * .27,
-          innerHeight * .18,
+          innerWidth *
+          .27,
+
+          innerHeight *
+          .18,
+
           92,
           "gold"
         );
 
         burst(
-          innerWidth * .73,
-          innerHeight * .17,
+          innerWidth *
+          .73,
+
+          innerHeight *
+          .17,
+
           92,
           "lav"
         );
+
       },
       3200
     );
@@ -1421,6 +1616,7 @@
   }
 
   function finale() {
+
     const spots = [
       [.12,.22,"gold"],
       [.28,.31,"purple"],
@@ -1430,24 +1626,40 @@
     ];
 
     spots.forEach(
-      ([x,y,c],i) =>
+      (
+        [x,y,c],
+        i
+      ) => {
+
         setTimeout(
           () =>
             burst(
-              innerWidth * x,
-              innerHeight * y,
+              innerWidth *
+              x,
+
+              innerHeight *
+              y,
+
               100,
               c
             ),
+
           i * 105
-        )
+        );
+      }
     );
+
+    const starCount =
+      isMobile
+        ? 70
+        : 34;
 
     for (
       let i = 0;
-      i < 70;
+      i < starCount;
       i++
     ) {
+
       stars.push({
         x:
           innerWidth *
@@ -1491,14 +1703,17 @@
     color,
     delay
   ) {
+
     setTimeout(
       () => {
 
         const tx =
-          innerWidth * px;
+          innerWidth *
+          px;
 
         const ty =
-          innerHeight * py;
+          innerHeight *
+          py;
 
         const x =
           tx +
@@ -1570,18 +1785,41 @@
   function burst(
     x,
     y,
-    n = 80,
+    requested = 80,
     color = "purple"
   ) {
+
     const cs =
       sets[color] ||
       sets.purple;
+
+    const n =
+      Math.max(
+        16,
+        Math.round(
+          requested *
+          PERF.particleScale
+        )
+      );
+
+    const glitterCount =
+      isMobile
+        ? 14
+        : 5;
 
     for (
       let i = 0;
       i < n;
       i++
     ) {
+
+      if (
+        particles.length >=
+        PERF.maxParticles
+      ) {
+        break;
+      }
+
       const a =
         6.283 *
         i /
@@ -1603,12 +1841,14 @@
           y,
           a,
           speed,
+
           cs[
             Math.floor(
               Math.random() *
               cs.length
             )
           ],
+
           false
         )
       );
@@ -1616,18 +1856,29 @@
 
     for (
       let i = 0;
-      i < 16;
+      i < glitterCount;
       i++
     ) {
+
+      if (
+        particles.length >=
+        PERF.maxParticles
+      ) {
+        break;
+      }
+
       particles.push(
         makeParticle(
           x,
           y,
+
           Math.random() *
           6.283,
+
           .7 +
           Math.random() *
           2,
+
           "#fff",
           true
         )
@@ -1643,10 +1894,20 @@
     color,
     glitter
   ) {
+
+    const lifeBase =
+      isMobile
+        ? 65
+        : 52;
+
     const life =
-      65 +
+      lifeBase +
       Math.random() *
-      55;
+      (
+        isMobile
+          ? 55
+          : 35
+      );
 
     return {
       x,
@@ -1692,18 +1953,36 @@
   }
 
   function startLoop() {
+
     cancelAnimationFrame(
       raf
     );
 
-    const frame = () => {
-      draw();
+    const frame =
+      timestamp => {
 
-      raf =
-        requestAnimationFrame(
-          frame
-        );
-    };
+        if (!running) {
+          return;
+        }
+
+        if (
+          !lastFrame ||
+          timestamp -
+          lastFrame >=
+          PERF.frameMs
+        ) {
+
+          lastFrame =
+            timestamp;
+
+          draw();
+        }
+
+        raf =
+          requestAnimationFrame(
+            frame
+          );
+      };
 
     raf =
       requestAnimationFrame(
@@ -1712,6 +1991,7 @@
   }
 
   function draw() {
+
     ctx.clearRect(
       0,
       0,
@@ -1731,13 +2011,32 @@
           r.x += r.vx;
           r.y += r.vy;
 
-          r.vy += .012;
+          r.vy +=
+            .012;
+
+          const trailCount =
+            isMobile
+              ? 2
+              : (
+                  r.age % 3 ===
+                  0
+                    ? 1
+                    : 0
+                );
 
           for (
             let i = 0;
-            i < 2;
+            i < trailCount;
             i++
           ) {
+
+            if (
+              particles.length >=
+              PERF.maxParticles
+            ) {
+              break;
+            }
+
             particles.push(
               makeParticle(
                 r.x +
@@ -1773,7 +2072,11 @@
           ctx.arc(
             r.x,
             r.y,
-            2.1,
+
+            isMobile
+              ? 2.1
+              : 1.8,
+
             0,
             6.283
           );
@@ -1781,13 +2084,18 @@
           ctx.fillStyle =
             "#fff";
 
-          ctx.shadowBlur =
-            18;
+          if (
+            PERF.glow
+          ) {
 
-          ctx.shadowColor =
-            sets[
-              r.color
-            ][0];
+            ctx.shadowBlur =
+              18;
+
+            ctx.shadowColor =
+              sets[
+                r.color
+              ][0];
+          }
 
           ctx.fill();
 
@@ -1798,6 +2106,7 @@
             r.age > 42 ||
             r.y <= r.ty
           ) {
+
             burst(
               r.tx,
               r.ty,
@@ -1864,13 +2173,29 @@
           ctx.fillStyle =
             p.color;
 
-          ctx.shadowBlur =
-            p.glitter
-              ? 8
-              : 12;
+          /*
+            shadowBlur הוא החלק היקר
+            בכרום על macOS.
 
-          ctx.shadowColor =
-            p.color;
+            במובייל נשאיר אותו
+            כי שם כבר ראינו שזה רץ חלק.
+
+            בדסקטופ הזיקוקים עדיין
+            נראים מעולה, אבל הרבה
+            פחות כבדים.
+          */
+          if (
+            PERF.glow
+          ) {
+
+            ctx.shadowBlur =
+              p.glitter
+                ? 8
+                : 12;
+
+            ctx.shadowColor =
+              p.color;
+          }
 
           ctx.beginPath();
 
@@ -1907,7 +2232,8 @@
             return false;
           }
 
-          s.p += .18;
+          s.p +=
+            .18;
 
           ctx.globalAlpha =
             Math.max(
@@ -1925,6 +2251,9 @@
 
           ctx.strokeStyle =
             "#fff8ff";
+
+          ctx.lineWidth =
+            1;
 
           ctx.beginPath();
 
